@@ -138,10 +138,10 @@ class flipdown_anvil(flipdown_anvilTemplate):
   def countdown(self, time_sec = 30, category = ""):
     self.get_random_exercise(category)
     while time_sec:
-      # mins, secs = divmod(time_sec, 60)
       self.seconds.text = time_sec
       self.tseconds += 1
-      self.total_seconds.text = str(self.tseconds)
+      mins, secs = divmod(self.tseconds, 60)
+      self.total_seconds.text = str(mins) + ":" + str(secs)
       time.sleep(1)
       time_sec -= 1
       if self.stop_now:

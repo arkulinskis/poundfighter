@@ -1,7 +1,7 @@
-container: {type: ColumnPanel}
 components:
-- name: label_1
+- layout_properties: {grid_position: 'KBNBGX,ZMRCRP'}
+  name: label_1
   properties: {text: Coming soon!}
   type: Label
-  layout_properties: {grid_position: 'KBNBGX,ZMRCRP'}
+container: {type: ColumnPanel}
 is_package: true

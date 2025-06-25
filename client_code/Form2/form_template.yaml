@@ -1,5 +1,0 @@
-components: []
-container:
-  properties: {html: <iframe src="_/theme/new_file.html"></iframe>}
-  type: HtmlTemplate
-is_package: true

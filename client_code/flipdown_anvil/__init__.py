@@ -146,7 +146,7 @@ class flipdown_anvil(flipdown_anvilTemplate):
       self.seconds.text = time_sec
       self.tseconds += 1
       mins, secs = divmod(self.tseconds, 60)
-      self.total_seconds.text = str(mins) + ":" + str(secs)
+      self.total_seconds.text = "%02d" % mins + ":" + "%02d" % secs
       time.sleep(1)
       time_sec -= 1
       if self.stop_now:

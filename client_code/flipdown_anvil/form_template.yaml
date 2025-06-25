@@ -107,6 +107,10 @@ components:
       name: flow_panel_6
       properties: {align: center, spacing_above: medium, spacing_below: medium}
       type: FlowPanel
+    - layout_properties: {slot: card-content-container-slot}
+      name: text_2
+      properties: {align: center, scale: small, style: body, text: '* stay safe doing the exercises, I am not responsible for any injuries.'}
+      type: form:dep_n18z5lce3xl8g:_Components.Text
     layout_properties: {slot: card-content-slot}
     name: card_content_container_1
     properties: {}

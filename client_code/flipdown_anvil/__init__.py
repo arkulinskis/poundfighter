@@ -156,7 +156,12 @@ class flipdown_anvil(flipdown_anvilTemplate):
     available = [i for i in range(len(self.exercise_list[category])) if i not in self.used[category]]
   
     if not available:
-      return f"All exercises from {category} have been used."
+      self.used = {
+        "bed_exercises": set(),
+        "sitting_exercises": set(),
+        "standing_exercises": set()
+      }
+      available = [i for i in range(len(self.exercise_list[category])) if i not in self.used[category]]
   
     choice_index = random.choice(available)
     self.used[category].add(choice_index)

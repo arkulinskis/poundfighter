@@ -1,6 +1,7 @@
 from ._anvil_designer import flipdown_anvilTemplate
 import time
 import random
+from anvil import js
 
 
 
@@ -9,6 +10,10 @@ import random
 class flipdown_anvil(flipdown_anvilTemplate):
   def __init__(self, **properties):
     self.init_components(**properties)
+
+    js.window.addEventListener("focus", self.on_refocus)
+    js.window.addEventListener("blur", self.on_blur)
+    
     self.exercise_list = {
   "bed_exercises": [
     {
@@ -200,3 +205,14 @@ class flipdown_anvil(flipdown_anvilTemplate):
     self.title.text = "Exercise is stopped"
     self.explanation.text = "Again?"
     self.seconds.text = "0"
+
+
+
+  def form_show(self, **event_args):
+    js.call("lockWakeState")
+
+  def on_refocus(self, event):
+    js.call("lockWakeState")
+
+  def on_blur(self, event):
+    js.call("releaseWakeState")

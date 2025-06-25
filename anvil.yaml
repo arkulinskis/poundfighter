@@ -1,38 +1,52 @@
 allow_embedding: false
-package_name: PoundFighter
-name: PoundFighter
-startup_form: null
-runtime_options: {version: 2, client_version: '3', server_version: python3-full, server_spec: null}
-metadata: {title: PoundFighter - goal based workouts}
-services:
-- source: /runtime/services/tables.yml
-  client_config: {}
-  server_config: {}
-- source: /runtime/services/anvil/users.yml
-  client_config: {allow_signup: false, enable_automatically: true, use_email: true, confirm_email: true}
-  server_config: {user_table: users}
 db_schema:
   users:
     client: none
-    server: full
     columns:
-    - name: email
-      admin_ui: {order: 0, width: 200}
+    - admin_ui: {order: 0, width: 200}
+      name: email
       type: string
-    - name: enabled
-      admin_ui: {order: 1, width: 200}
+    - admin_ui: {order: 1, width: 200}
+      name: enabled
       type: bool
-    - name: last_login
-      admin_ui: {order: 2, width: 200}
+    - admin_ui: {order: 2, width: 200}
+      name: last_login
       type: datetime
-    - name: password_hash
-      admin_ui: {order: 3, width: 200}
+    - admin_ui: {order: 3, width: 200}
+      name: password_hash
       type: string
-    - name: n_password_failures
-      admin_ui: {order: 4, width: 200}
+    - admin_ui: {order: 4, width: 200}
+      name: n_password_failures
       type: number
-    - name: confirmed_email
-      admin_ui: {order: 5, width: 200}
+    - admin_ui: {order: 5, width: 200}
+      name: confirmed_email
       type: bool
+    server: full
     title: Users
-startup: {type: form, module: Form1}
+dependencies:
+- dep_id: dep_n18z5lce3xl8g
+  resolution_hints: {app_id: 4UK6WHQ6UX7AKELK, name: Material 3 Theme, package_name: m3}
+  version: {version_tag: v1.2.5}
+metadata: {title: PoundFighter - goal based workouts}
+name: PoundFighter
+native_deps:
+  head_html: |2-
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flipdown/dist/flipdown.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flipdown/dist/flipdown.min.js"></script>
+package_name: PoundFighter
+runtime_options:
+  client_version: '3'
+  legacy_features: {__dict__: true, bootstrap3: true, class_names: true, root_container: true}
+  server_spec: null
+  server_version: python3-full
+  version: 3
+services:
+- client_config: {}
+  server_config: {}
+  source: /runtime/services/tables.yml
+- client_config: {allow_signup: false, confirm_email: true, enable_automatically: true, use_email: true}
+  server_config: {user_table: users}
+  source: /runtime/services/anvil/users.yml
+startup: {module: flipdown_anvil, type: form}
+startup_form: null

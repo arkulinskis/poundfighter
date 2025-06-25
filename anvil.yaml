@@ -27,7 +27,7 @@ dependencies:
 - dep_id: dep_n18z5lce3xl8g
   resolution_hints: {app_id: 4UK6WHQ6UX7AKELK, name: Material 3 Theme, package_name: m3}
   version: {version_tag: v1.2.5}
-metadata: {title: PoundFighter - goal based workouts}
+metadata: {description: 'Fastest way to launch yourself into a workout. Literally be in bed buddy and flex your glutes for 20 seconds. Life is about getting things done. This is your new wake up friend. Lunch time friend. Watching tv friend. Ok I oversold it, but use it anyway.', logo_img: 'asset:poundfighter.png', title: 'PoundFighter - brain off, glutes on'}
 name: PoundFighter
 native_deps:
   head_html: "<script>\n\n\n  function isScreenLockSupported() {\n    return ('wakeLock' in navigator);\n  }\n  var screenLock;\n  async function lockWakeState() {\n    console.log(\"asked to keep awake\");\n    if(isScreenLockSupported()){\n      try {\n        screenLock = await navigator.wakeLock.request('screen');\n      } catch(err) {\n        console.log(err.name, err.message);\n      }\n      return screenLock;\n    }\n  }\n  function releaseWakeState() { \n    console.log(\"asked to be able to sleep\");\n    if(typeof screenLock !== \"undefined\" && screenLock != null) {\n      screenLock.release()\n        .then(() => {\n          console.log(\"Lock released 🎈\");\n          screenLock = null;\n        });\n    }\n  }  \n</script>"

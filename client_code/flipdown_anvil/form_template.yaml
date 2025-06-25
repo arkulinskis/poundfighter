@@ -83,6 +83,21 @@ components:
       properties: {align: center, gap: medium, vertical_align: middle}
       type: FlowPanel
     - components:
+      - layout_properties: {}
+        name: text_1
+        properties:
+          align: center
+          italic: true
+          scale: medium
+          text: |-
+            Get to 5 minutes!
+            Then maybe keep going?
+        type: form:dep_n18z5lce3xl8g:_Components.Text
+      layout_properties: {slot: card-content-container-slot}
+      name: flow_panel_1
+      properties: {align: center, vertical_align: middle}
+      type: FlowPanel
+    - components:
       - event_bindings: {click: sweaty_button_click}
         layout_properties: {}
         name: sweaty_button

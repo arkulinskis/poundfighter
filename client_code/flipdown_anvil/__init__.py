@@ -21,7 +21,7 @@ class flipdown_anvil(flipdown_anvilTemplate):
     },
     {
       "name": "Knee-to-Chest Stretch",
-      "description": "Pull one knee toward your chest and hold for 20 seconds, then switch sides. Helps stretch the lower back."
+      "description": "Pull one knee toward your chest and hold, then switch sides. Helps stretch the lower back."
     },
     {
       "name": "Ankle Pumps",

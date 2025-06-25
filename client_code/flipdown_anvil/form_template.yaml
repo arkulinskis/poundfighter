@@ -63,7 +63,7 @@ components:
         type: Label
       - layout_properties: {}
         name: seconds
-        properties: {bold: true, font_size: 24}
+        properties: {bold: true, font_size: 24, text: '0'}
         type: Label
       layout_properties: {slot: card-content-container-slot}
       name: count_down_timer
@@ -74,8 +74,9 @@ components:
         name: label_3
         properties: {text: 'Total workout time so far:'}
         type: Label
-      - name: total_seconds
-        properties: {font_size: 18}
+      - layout_properties: {}
+        name: total_seconds
+        properties: {font_size: 18, text: '0'}
         type: Label
       layout_properties: {slot: card-content-container-slot}
       name: flow_panel_7

@@ -35,7 +35,12 @@ native_deps:
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flipdown/dist/flipdown.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flipdown/dist/flipdown.min.js"></script>
 package_name: PoundFighter
-runtime_options: {client_version: '3', server_spec: null, server_version: python3-full, version: 2}
+runtime_options:
+  client_version: '3'
+  legacy_features: {__dict__: true, bootstrap3: true, class_names: true, root_container: true}
+  server_spec: null
+  server_version: python3-full
+  version: 3
 services:
 - client_config: {}
   server_config: {}

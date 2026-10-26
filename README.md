@@ -1,88 +1,67 @@
-# About This [Anvil](https://anvil.works/?utm_source=github:app_README) App
+# PoundFighter
 
-### Build web apps with nothing but Python.
+**Brain off, glutes on.** Micro workouts for your workday, turned into a monster-collecting game.
+Live at [poundfighter.com](https://poundfighter.com).
 
-The app in this repository is built with [Anvil](https://anvil.works?utm_source=github:app_README), the framework for building web apps with nothing but Python. You can clone this app into your own Anvil account to use and modify.
+## How it plays
 
-Below, you will find:
-- [How to open this app](#opening-this-app-in-anvil-and-getting-it-online) in Anvil and deploy it online
-- Information [about Anvil](#about-anvil)
-- And links to some handy [documentation and tutorials](#tutorials-and-documentation)
+1. Say where you are: **in bed**, **at your desk** or **standing**. Pick a session length (1, 3 or 5 fights).
+2. Each fight is one exercise against a hidden monster. Every rep damages it and uncovers part of its portrait.
+3. **Voice reps:** grunt, clap or say "HUP!" on each rep. The mic learns the room's background noise and counts
+   a rep whenever the sound jumps well above it. The screen stays awake during the session. No mic? Tap the monster
+   or press space.
+4. Beat it and it's **captured** into your collection. 36 monsters across three habitats
+   (Bedroom, Office, Lounge), one habitat per position, in four rarities. Catch duplicates to level cards up to
+   Bronze, Silver and Gold.
 
-## Opening this app in Anvil and getting it online
+Around that loop:
 
-### Cloning the app
+- **Pounds (£)** for every rep, multiplied by combos. Spend them in the shop on **Lures** (better odds of
+  rare monsters) and **Arenas** (fight backgrounds).
+- **XP and ranks** from Couch Potato to PoundFighter Legend.
+- **Daily punch card:** one punch per clock hour you fight in, with chests at 4 and 8 punches. Built to reward
+  little-and-often across the workday.
+- **Daily quests**, **day streaks**, **badges**, and optional **workday nudges** (browser notifications).
 
-Go to the [Anvil Editor](https://anvil.works/build?utm_source=github:app_README) (you might need to sign up for a free account) and click on “Clone from GitHub” (underneath the “Blank App” option):
+Progress is saved in the browser (localStorage). There are no accounts.
 
-<img src="https://anvil.works/docs/version-control-new-ide/img/git/clone-from-github.png" alt="Clone from GitHub"/>
+## Code layout
 
-Enter the URL of this GitHub repository. If you're not yet logged in, choose "GitHub credentials" as the authentication method and click "Connect to GitHub".
+The game is a plain HTML/CSS/JavaScript app with no build step:
 
-<img src="https://anvil.works/docs/version-control-new-ide/img/git/clone-app-from-git.png" alt="Clone App from Git modal"/>
+```
+theme/assets/app/
+  index.html
+  styles.css
+  js/app.js          screens, fight loop, rewards
+  js/mic.js          microphone rep detector (baseline + peak with hysteresis)
+  js/monster-art.js  procedural SVG monsters (generated from each monster's id)
+  js/data.js         exercises, monsters, quests, badges, shop
+  js/store.js        saved progress, levels, quests, streaks, badges
+  js/sfx.js          synthesized sound effects + vibration
+```
 
-Finally, click "Clone App".
+### Hosting
 
-This app will then be in your Anvil account, ready for you to run it or start editing it! **Any changes you make will be automatically pushed back to this repository, if you have permission!** You might want to [make a new branch](https://anvil.works/docs/version-control-new-ide?utm_source=github:app_README).
+- **On Anvil (current setup):** the `Main` startup form shows the app full-screen from
+  `/_/theme/app/index.html` in a same-site iframe (with microphone and screen-wake-lock allowed).
+  After pulling this branch into the Anvil editor, publish as usual.
+- **Anywhere else:** `theme/assets/app/` is a self-contained static site. Serve it over HTTPS (needed for the
+  microphone), e.g. GitHub Pages or Netlify.
 
-### Running the app yourself:
+### Run locally
 
-Find the **Run** button at the top-right of the Anvil editor:
+```
+cd theme/assets/app
+python -m http.server 8000
+# open http://localhost:8000  (localhost counts as secure, so the mic works)
+```
 
-<img src="https://anvil.works/docs/img/run-button-new-ide.png"/>
+### Tuning the mic
 
+In **Me → Tune the mic** you can watch the live level against the rep line. *Sensitivity* sets how far above
+the background noise a sound must be (6–30 dB, default 14). *Minimum time between reps* (default 0.45 s)
+stops one grunt from counting twice.
 
-### Publishing the app on your own URL
-
-Now you've cloned the app, you can [deploy it on the internet with two clicks](https://anvil.works/docs/deployment/quickstart?utm_source=github:app_README)! Find the **Publish** button at the top-right of the editor:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/environments/publish-button.png"/>
-
-When you click it, you will see the Publish dialog:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/quickstart/empty-environments-dialog.png"/>
-
-Click **Publish This App**, and you will see that your app has been deployed at a new, public URL:
-
-<img src="https://anvil.works/docs/deployment-new-ide/img/quickstart/default-public-environment.png"/>
-
-That's it - **your app is now online**. Click the link and try it!
-
-## About Anvil
-
-If you’re new to Anvil, welcome! Anvil is a platform for building full-stack web apps with nothing but Python. No need to wrestle with JS, HTML, CSS, Python, SQL and all their frameworks – just build it all in Python.
-
-<figure>
-<figcaption><h3>Learn About Anvil In 80 Seconds👇</h3></figcaption>
-<a href="https://www.youtube.com/watch?v=3V-3g1mQ5GY" target="_blank">
-<img
-  src="https://anvil-website-static.s3.eu-west-2.amazonaws.com/anvil-in-80-seconds-YouTube.png"
-  alt="Anvil In 80 Seconds"
-/>
-</a>
-</figure>
-<br><br>
-
-[![Try Anvil Free](https://anvil-website-static.s3.eu-west-2.amazonaws.com/mark-complete.png)](https://anvil.works?utm_source=github:app_README)
-
-To learn more about Anvil, visit [https://anvil.works](https://anvil.works?utm_source=github:app_README).
-
-## Tutorials and documentation
-
-### Tutorials
-
-If you are just starting out with Anvil, why not **[try the 10-minute Feedback Form tutorial](https://anvil.works/learn/tutorials/feedback-form?utm_source=github:app_README)**? It features step-by-step tutorials that will introduce you to the most important parts of Anvil.
-
-Anvil has tutorials on:
-- [Building Dashboards](https://anvil.works/learn/tutorials/data-science#dashboarding?utm_source=github:app_README)
-- [Multi-User Applications](https://anvil.works/learn/tutorials/multi-user-apps?utm_source=github:app_README)
-- [Building Web Apps with an External Database](https://anvil.works/learn/tutorials/external-database?utm_source=github:app_README)
-- [Deploying Machine Learning Models](https://anvil.works/learn/tutorials/deploy-machine-learning-model?utm_source=github:app_README)
-- [Taking Payments with Stripe](https://anvil.works/learn/tutorials/stripe?utm_source=github:app_README)
-- And [much more....](https://anvil.works/learn/tutorials?utm_source=github:app_README)
-
-### Reference Documentation
-
-The Anvil reference documentation provides comprehensive information on how to use Anvil to build web applications. You can find the documentation [here](https://anvil.works/docs/overview?utm_source=github:app_README).
-
-If you want to get to the basics as quickly as possible, each section of this documentation features a [Quick-Start Guide](https://anvil.works/docs/overview/quickstarts?utm_source=github:app_README).
+The old Anvil forms (`flipdown_anvil`, `Form1`, `Form2`, `flipdown_javaxcript`) are still in `client_code/` but
+are no longer used.

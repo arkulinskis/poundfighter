@@ -53,8 +53,13 @@ h1 { font-family: var(--display); font-weight: 400; font-size: 28px; letter-spac
 h2 { font-size: 17px; font-weight: 800; }
 h3 { font-size: 20px; font-weight: 800; }
 
-.boot { display: grid; place-items: center; min-height: 100vh; font-family: var(--display); font-size: 32px; color: var(--accent); }
-.boot span { color: var(--ink); }
+/* Start-up screen: matches Anvil's loading spinner (see head_html in anvil.yaml) */
+.boot { position: fixed; inset: 0; background: var(--bg); }
+.boot-icon { position: absolute; left: calc(50% - 52px); top: calc(42% - 52px); width: 104px; height: 104px; border-radius: 50%;
+  background: url(icon-192.png) center / cover no-repeat; box-shadow: 0 0 40px rgba(255, 190, 40, .45); animation: bootPulse 1.4s ease-in-out infinite; }
+.boot-icon::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; border: 4px solid transparent;
+  border-top-color: var(--gold-mid); border-right-color: rgba(255, 211, 77, .35); animation: spin .9s linear infinite; }
+@keyframes bootPulse { 50% { transform: scale(1.06); box-shadow: 0 0 60px rgba(255, 190, 40, .65); } }
 
 /* ---------- Layout ---------- */
 .page {

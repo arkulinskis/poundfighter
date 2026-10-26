@@ -7,6 +7,13 @@ import { esc, I, toast, openModal, closeModal, $, timeAgo } from './ui.js';
 
 export const APP_VERSION = '3.0.0';
 
+// Privacy & Terms: the page itself opens in the Anvil host (over the game); this frame only shows links
+// and the sign-up tick box (legal-kit.js, loaded in index.html).
+const LK = window.LegalKit || null;
+if (LK && hasHost) LK.setOpenHandler((tab) => call('legal_open', { tab }).catch(() => {}));
+const legalLink = (text = 'Privacy &amp; Terms', tab = 'overview') =>
+  LK ? `<button type="button" class="link" data-lk-open="${tab}">${text}</button>` : '';
+
 export const online = {
   status: hasHost ? 'connecting' : 'offline', // connecting | ready | offline | error
   account: null, // { email, is_admin }
@@ -121,6 +128,7 @@ export function accountPanel() {
         <button class="btn" data-action="auth" data-mode="signin">Sign in</button>
         <button class="btn gold" data-action="auth" data-mode="signup">Create account</button>
       </div>
+      <p class="small muted">${legalLink()}</p>
     </section>`;
   }
   const a = online.account;
@@ -135,6 +143,7 @@ export function accountPanel() {
       <button class="btn small" data-action="change-password">${I.key} Change password</button>
       <button class="btn small" data-action="logout">${I.logout} Sign out</button>
     </div>
+    <p class="small muted">${legalLink()}</p>
   </section>`;
 }
 
@@ -153,6 +162,7 @@ export function openAuth(mode = 'signin') {
     <label class="field"><span>Email</span><input type="email" name="email" autocomplete="email" required></label>
     ${mode !== 'forgot' ? `<label class="field"><span>Password</span><input type="password" name="password" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}" required minlength="${mode === 'signup' ? 8 : 1}"></label>` : ''}
     ${mode === 'signup' ? `<label class="field"><span>Password again</span><input type="password" name="password2" autocomplete="new-password" required></label>` : ''}
+    ${mode === 'signup' && LK ? LK.consentField() : ''}
     <p class="form-error" id="formErr" role="alert"></p>
     <button class="btn gold big" type="submit">${submit}</button>
     <div class="auth-links">
@@ -192,6 +202,7 @@ async function onAuthSubmit(form) {
   if (mode === 'signup') {
     if (password.length < 8) return setErr('Use at least 8 characters for your password.');
     if (password !== form.password2.value) return setErr('The two passwords do not match.');
+    if (LK && !LK.consentChecked(form)) return setErr('');
   }
   setErr('');
   busy(form, true);
@@ -267,7 +278,8 @@ export function openFeedback(kind = 'bug') {
     <label class="field"><span>What happened?</span>
       <textarea name="message" rows="5" maxlength="4000" required placeholder="What did you do, what did you expect, and what happened instead?"></textarea></label>
     ${online.account ? '' : `<label class="field"><span>Your email <i class="muted">(optional, so we can reply)</i></span><input type="email" name="email" autocomplete="email"></label>`}
-    <label class="check"><input type="checkbox" name="withInfo" checked> Include device info (browser, screen size, app version)</label>
+    <label class="check"><input type="checkbox" name="withInfo"> Include device info (browser, screen size, app version)</label>
+    ${LK ? `<p class="small muted">How we use what you send: ${legalLink('Privacy Policy', 'privacy')}</p>` : ''}
     <p class="form-error" id="formErr" role="alert"></p>
     <div class="row-btns"><button type="button" class="btn" data-action="close-modal">Cancel</button><button class="btn gold" type="submit">Send</button></div>
   </form>`);

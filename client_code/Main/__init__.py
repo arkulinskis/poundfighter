@@ -5,6 +5,7 @@ import anvil.server
 import anvil.users
 
 from ._anvil_designer import MainTemplate
+from .. import legal
 
 
 class Main(MainTemplate):
@@ -60,6 +61,7 @@ class Main(MainTemplate):
   # ---------------------------------------------------------------- methods
 
   def m_hello(self):
+    legal.refresh_soon()  # Privacy & Terms: reminder for signed-in players who haven't accepted
     return {
       'account': anvil.server.call('get_account'),
       'installable': bool(getattr(self._window, 'pfInstallPrompt', None)),
@@ -67,11 +69,13 @@ class Main(MainTemplate):
 
   def m_login(self, email, password):
     anvil.users.login_with_email(email.strip(), password, remember=True)
+    legal.refresh_soon()
     return anvil.server.call('get_account')
 
   def m_signup(self, email, password):
     anvil.users.signup_with_email(email.strip(), password, remember=True)
     account = anvil.server.call('get_account')
+    legal.refresh_soon()  # records the sign-up tick box
     if not account:
       # Email confirmation is switched on: they must click the link first
       return {'needs_confirmation': True}
@@ -79,6 +83,11 @@ class Main(MainTemplate):
 
   def m_logout(self):
     anvil.users.logout()
+    legal.signed_out()
+    return True
+
+  def m_legal_open(self, tab='overview'):
+    legal.open(tab)
     return True
 
   def m_forgot(self, email):

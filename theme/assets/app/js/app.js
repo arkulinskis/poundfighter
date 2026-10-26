@@ -3,21 +3,27 @@ import { monsterSVG, seeded } from './monster-art.js';
 import { RepDetector, dbToMeter } from './mic.js';
 import { sfx, configureSfx, getAudioContext } from './sfx.js';
 import * as store from './store.js';
+import { esc, $, fmtNum, fmtTime, I, coin, toast, openModal, closeModal, modalOpen } from './ui.js';
+import { hasHost } from './bridge.js';
+import { online, initOnline, scheduleSync, accountPanel, viewAdmin, loadAdmin, onlineActions, APP_VERSION } from './online.js';
+import { initReminders, remindersPanel, reminderActions, maybeAskAfterSession, noteActivity, canInstall, env } from './reminders.js';
 
 // ---------- State ----------
 
 let S = store.load();
-const persist = () => store.save(S);
+const saveLocal = () => store.save(S);
+// Save on this device, then sync to the account (if signed in) a moment later
+const persist = () => {
+  store.save(S);
+  scheduleSync();
+};
 
 const app = document.getElementById('app');
-const modalRoot = document.getElementById('modal');
-const toastRoot = document.getElementById('toasts');
 
 let route = 'home';
 let collectionTab = 'bedroom';
 let session = null;
 let micTest = null; // { count } while the mic tuning dialog is open
-let lastNudge = 0;
 
 const detector = new RepDetector({
   onRep: () => (micTest ? onTestRep() : onRep('mic')),
@@ -37,13 +43,6 @@ applySettings();
 
 // ---------- Small helpers ----------
 
-const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const fmtTime = (sec) => {
-  sec = Math.max(0, Math.floor(sec));
-  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-  return h ? `${h}h ${m}m` : `${m}:${String(s).padStart(2, '0')}`;
-};
-const fmtNum = (n) => Math.round(n).toLocaleString();
 const hourLabel = (h) => `${h % 12 || 12}${h < 12 ? 'a' : 'p'}`;
 const shuffle = (arr) => {
   const a = [...arr];
@@ -53,53 +52,8 @@ const shuffle = (arr) => {
   }
   return a;
 };
-const $ = (id) => document.getElementById(id);
 const rarityName = (r) => D.RARITIES[r].name;
-
-const svgI = (body) => `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
-const I = {
-  mic: svgI('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/>'),
-  micOff: svgI('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v4"/><path d="M8 22h8"/><path d="M3 3l18 18"/>'),
-  flame: svgI('<path d="M12 22c4 0 7-3 7-7 0-5-4-7-5-12-2 2-3 4-3 6-1-1-2-2-2-4-2 2-4 5-4 10 0 4 3 7 7 7z"/>'),
-  zap: svgI('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
-  grid: svgI('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>'),
-  bag: svgI('<path d="M6 7h12l1 14H5z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/>'),
-  user: svgI('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
-  x: svgI('<path d="M6 6l12 12M18 6L6 18"/>'),
-  bed: svgI('<path d="M3 18V6"/><path d="M3 14h18v4"/><path d="M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="2"/>'),
-  desk: svgI('<rect x="4" y="5" width="16" height="10" rx="1"/><path d="M2 19h20"/>'),
-  stand: svgI('<circle cx="12" cy="4" r="2"/><path d="M12 7v7"/><path d="M7 10l5-2 5 2"/><path d="M9 22l3-8 3 8"/>'),
-  gift: svgI('<rect x="3" y="8" width="18" height="5" rx="1"/><path d="M5 13v8h14v-8"/><path d="M12 8v13"/><path d="M12 8C10 4 6 4 6 6.5S12 8 12 8zm0 0c2-4 6-4 6-1.5S12 8 12 8z"/>'),
-  check: svgI('<path d="M5 12l5 5 9-10"/>'),
-  lock: svgI('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'),
-  magnet: svgI('<path d="M6 3v8a6 6 0 0 0 12 0V3"/><path d="M6 7h4M14 7h4"/>'),
-  medal: svgI('<circle cx="12" cy="15" r="6"/><path d="M8 3l2.5 6.5M16 3l-2.5 6.5"/><path d="M12 12.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" fill="currentColor" stroke="none"/>'),
-  skip: svgI('<path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/>'),
-};
 const POS_ICON = { bed: I.bed, sitting: I.desk, standing: I.stand };
-const coin = (n) => `<span class="coin"><b>£</b>${fmtNum(n)}</span>`;
-
-function toast(html, kind = '') {
-  const el = document.createElement('div');
-  el.className = `toast ${kind}`;
-  el.innerHTML = html;
-  toastRoot.appendChild(el);
-  setTimeout(() => el.classList.add('out'), 2600);
-  setTimeout(() => el.remove(), 3100);
-}
-
-function openModal(html, { onClose } = {}) {
-  modalRoot.innerHTML = `<div class="modal-back" data-action="close-modal"></div><div class="modal" role="dialog" aria-modal="true">${html}</div>`;
-  modalRoot.classList.add('open');
-  modalRoot._onClose = onClose;
-}
-function closeModal() {
-  const cb = modalRoot._onClose;
-  modalRoot._onClose = null;
-  modalRoot.classList.remove('open');
-  modalRoot.innerHTML = '';
-  if (cb) cb();
-}
 
 // ---------- Screen wake lock ----------
 
@@ -127,12 +81,12 @@ function topbar() {
   const streak = store.currentStreak(S);
   return `<header class="topbar">
     <button class="lvl-block" data-action="go" data-to="me" aria-label="Your profile">
-      <span class="lvl-badge">${lv.level}</span>
+      <span class="lvl-badge shiny">${lv.level}</span>
       <span class="lvl-text"><span class="rank">${esc(lv.rank)}</span><span class="xpbar"><i style="width:${(lv.pct * 100).toFixed(1)}%"></i></span></span>
     </button>
     <div class="top-chips">
       <span class="chip ${streak ? 'hot' : ''}" title="Day streak">${I.flame}${streak}</span>
-      <span class="chip gold" title="Pounds">${coin(S.pounds)}</span>
+      <span class="chip gold shiny" title="Pounds">${coin(store.pounds(S))}</span>
     </div>
   </header>`;
 }
@@ -145,14 +99,26 @@ function tabbar(active) {
 function render() {
   document.body.dataset.route = route;
   if (route === 'fight') return renderFight();
-  const views = { home: viewHome, collection: viewCollection, shop: viewShop, me: viewMe, summary: viewSummary };
+  const views = { home: viewHome, collection: viewCollection, shop: viewShop, me: viewMe, summary: viewSummary, admin: viewAdmin };
   app.innerHTML = views[route]();
 }
 
 function go(to) {
+  if (to === 'admin' && !(online.account && online.account.is_admin)) to = 'me';
   route = to;
   render();
   window.scrollTo(0, 0);
+  if (to === 'admin') loadAdmin();
+}
+
+// Re-render after background changes (sync, sign-in), but never mid-fight or mid-typing
+function refresh() {
+  if (route === 'fight') return;
+  const a = document.activeElement;
+  if (a && app.contains(a) && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return;
+  const y = window.scrollY;
+  render();
+  window.scrollTo(0, y);
 }
 
 // ---------- Home ----------
@@ -196,17 +162,29 @@ function sightings() {
   </section>`;
 }
 
+function installCard() {
+  if (!hasHost || !canInstall() || store.deviceGet().hideInstall) return '';
+  return `<section class="panel install-card gold-panel">
+    <div class="acct-crest">${I.download}</div>
+    <div class="install-text"><b>Install PoundFighter</b><span class="small">Opens in one tap, and can remind you to move during the day.</span></div>
+    <button class="btn small gold" data-action="install">Install</button>
+    <button class="icon-btn small" data-action="hide-install" aria-label="Hide">${I.x}</button>
+  </section>`;
+}
+
 function viewHome() {
   const day = store.getDay(S);
   const len = S.settings.length;
   const micOn = S.settings.mic && detector.supported;
-  const lure = S.armedLure && S.inventory[S.armedLure] > 0 ? D.LURES.find((l) => l.id === S.armedLure) : null;
+  const lure = S.armedLure && store.lureCount(S, S.armedLure) > 0 ? D.LURES.find((l) => l.id === S.armedLure) : null;
   return `${topbar()}
   <main class="page">
     <section class="hero">
-      <div class="logo">POUND<span>FIGHTER</span></div>
+      <div class="mascot shiny" role="img" aria-label="PoundFighter mascot"></div>
+      <div class="logo">POUND<span class="gold-text">FIGHTER</span></div>
       <p class="tag">Brain off, glutes on.</p>
     </section>
+    ${installCard()}
 
     <section class="panel">
       <div class="panel-head"><h2>Where are you?</h2></div>
@@ -248,6 +226,7 @@ function viewHome() {
     </section>
 
     ${sightings()}
+    <p class="foot-links small"><button class="link" data-action="feedback" data-kind="bug">${I.bug} Found a bug?</button><button class="link" data-action="feedback" data-kind="idea">Got an idea?</button></p>
   </main>
   ${tabbar('home')}`;
 }
@@ -330,19 +309,19 @@ function viewShop() {
   <main class="page">
     <section class="page-head">
       <h1>Shop</h1>
-      <p class="muted">Every rep earns pounds. Combos earn more. You have ${coin(S.pounds)}</p>
+      <p class="muted">Every rep earns pounds. Combos earn more. You have ${coin(store.pounds(S))}</p>
     </section>
     <section class="panel">
       <div class="panel-head"><h2>Lures</h2><span class="muted small">Used up on your next fight</span></div>
       <div class="shop-list">
         ${D.LURES.map((l) => {
-          const owned = S.inventory[l.id] || 0;
+          const owned = store.lureCount(S, l.id);
           const armed = S.armedLure === l.id && owned > 0;
           return `<div class="shop-item r-${l.rarity}">
             <div class="shop-icon">${I.magnet}</div>
             <div class="shop-text"><b>${esc(l.name)}</b><span class="small muted">${esc(l.desc)}</span>${owned ? `<span class="small">Owned: ${owned}</span>` : ''}</div>
             <div class="shop-actions">
-              <button class="btn small ${S.pounds < l.price ? 'disabled' : 'primary'}" data-action="buy-lure" data-id="${l.id}">${coin(l.price)}</button>
+              <button class="btn small ${store.pounds(S) < l.price ? 'disabled' : 'gold'}" data-action="buy-lure" data-id="${l.id}">${coin(l.price)}</button>
               ${owned ? `<button class="btn small ${armed ? 'on' : ''}" data-action="arm-lure" data-id="${l.id}">${armed ? 'Armed' : 'Arm'}</button>` : ''}
             </div>
           </div>`;
@@ -376,17 +355,19 @@ function viewMe() {
   return `${topbar()}
   <main class="page">
     <section class="page-head profile">
-      <div class="lvl-big">${lv.level}</div>
+      <div class="lvl-big shiny">${lv.level}</div>
       <div>
-        <h1>${esc(lv.rank)}</h1>
+        <h1 class="gold-text">${esc(lv.rank)}</h1>
         <div class="bar big"><i style="width:${lv.pct * 100}%"></i></div>
         <p class="muted small">${fmtNum(lv.into)} / ${fmtNum(lv.need)} XP to level ${lv.level + 1}</p>
       </div>
     </section>
+    ${accountPanel()}
     <section class="stats">
       ${stat('Reps', fmtNum(t.reps))}${stat('By voice', fmtNum(t.micReps))}${stat('Time', fmtTime(t.seconds))}
       ${stat('Sessions', fmtNum(t.sessions))}${stat('Captured', fmtNum(t.captures))}${stat('Best combo', `×${S.bestCombo}`)}
     </section>
+    ${remindersPanel()}
     <section class="panel">
       <div class="panel-head"><h2>Badges</h2><span class="muted small">${Object.keys(S.badges).length}/${D.BADGES.length}</span></div>
       <div class="badges">
@@ -414,14 +395,10 @@ function viewMe() {
       </label>
       <label class="set-row"><span><b>Sound effects</b></span><button class="switch ${st.sound ? 'on' : ''}" data-action="toggle" data-key="sound" role="switch" aria-checked="${st.sound}"><i></i></button></label>
       <label class="set-row"><span><b>Vibration</b></span><button class="switch ${st.vibrate ? 'on' : ''}" data-action="toggle" data-key="vibrate" role="switch" aria-checked="${st.vibrate}"><i></i></button></label>
-      <div class="set-row">
-        <span><b>Workday nudges</b><span class="small muted">A notification when a wild monster appears, while this page is open.</span></span>
-        <select data-setting="nudge" aria-label="Nudge interval">
-          ${[0, 30, 45, 60, 90].map((n) => `<option value="${n}" ${st.nudge === n ? 'selected' : ''}>${n ? `Every ${n} min` : 'Off'}</option>`).join('')}
-        </select>
-      </div>
-      <div class="set-row"><span><b>Reset progress</b><span class="small muted">Progress is saved on this device only.</span></span><button class="btn small danger" data-action="reset">Reset</button></div>
+      <div class="set-row"><span><b>Send feedback</b><span class="small muted">Report a bug or suggest an idea.</span></span><button class="btn small" data-action="feedback" data-kind="bug">${I.bug} Report</button></div>
+      ${online.account ? '' : `<div class="set-row"><span><b>Reset progress</b><span class="small muted">Wipes the progress saved on this device.</span></span><button class="btn small danger" data-action="reset">Reset</button></div>`}
     </section>
+    <p class="foot-links small muted">PoundFighter v${APP_VERSION}</p>
   </main>
   ${tabbar('me')}`;
 }
@@ -538,10 +515,10 @@ async function startSession(pos) {
   getAudioContext(); // unlock audio inside the tap
   const p = D.POSITIONS[pos];
   let lure = null;
-  if (S.armedLure && S.inventory[S.armedLure] > 0) {
+  if (S.armedLure && store.lureCount(S, S.armedLure) > 0) {
     lure = D.LURES.find((l) => l.id === S.armedLure);
-    S.inventory[lure.id]--;
-    if (!S.inventory[lure.id]) S.armedLure = null;
+    store.useLure(S, lure.id);
+    if (!store.lureCount(S, lure.id)) S.armedLure = null;
   }
   const exercises = pickExercises(pos, S.settings.length);
   session = {
@@ -556,7 +533,7 @@ async function startSession(pos) {
     index: 0,
     startedAt: Date.now(),
     startLevel: store.levelInfo(S.xp).level,
-    startPounds: S.pounds,
+    startEarned: S.earned,
     startXp: S.xp,
     reps: 0,
     micReps: 0,
@@ -736,7 +713,7 @@ function onRep(source) {
 
   // Commit progress straight away so nothing is lost if the tab closes
   const day = store.getDay(S);
-  S.pounds += gain;
+  store.addPounds(S, gain);
   S.xp += 5;
   S.totals.reps++;
   day.reps++;
@@ -773,7 +750,7 @@ function onRep(source) {
 }
 
 function holdDamage(f) {
-  S.pounds += 1;
+  store.addPounds(S, 1);
   S.xp += 3;
   f.hp--;
   sfx.hit(1);
@@ -827,7 +804,7 @@ function capture(f) {
   const tierUp = !isNew && newTier && newTier.name && (!oldTier || oldTier.id !== newTier.id) ? newTier : null;
   const pounds = rar.pounds + (isNew ? 20 : 0) + (tierUp ? 25 : 0);
   const xp = rar.xp + (isNew ? 30 : 0);
-  S.pounds += pounds;
+  store.addPounds(S, pounds);
   S.xp += xp;
   S.totals.captures++;
   const day = store.getDay(S);
@@ -855,6 +832,7 @@ function capture(f) {
     if (!session || cur() !== f) return;
     ov.className = `overlay show cap r-${m.rarity}`;
     ov.innerHTML = `<div class="cap-box">
+      ${sparkles(m.rarity === 'common' ? 8 : 16)}
       <div class="cap-title">${isNew ? 'NEW MONSTER!' : 'CAPTURED!'}</div>
       <div class="cap-card r-${m.rarity} t-${newTier.id}">
         <div class="cap-art">${monsterSVG(m)}</div>
@@ -869,6 +847,14 @@ function capture(f) {
     f.canAdvance = true;
     autoAdvance(f, 7);
   }, 700);
+}
+
+// Little gold stars that twinkle around the capture card
+function sparkles(n) {
+  return Array.from({ length: n }, () => {
+    const size = 8 + Math.random() * 14;
+    return `<i class="spark" style="left:${Math.random() * 100}%;top:${Math.random() * 90}%;width:${size}px;height:${size}px;animation-delay:${(Math.random() * 1.6).toFixed(2)}s"></i>`;
+  }).join('');
 }
 
 function autoAdvance(f, secs) {
@@ -949,7 +935,7 @@ function finishSession() {
     const info = store.questInfo(day, q);
     if (info.done && !q.claimed) {
       q.claimed = true;
-      S.pounds += info.reward;
+      store.addPounds(S, info.reward);
       S.xp += 50;
       quests.push(info);
     }
@@ -959,9 +945,9 @@ function finishSession() {
   for (const c of D.CHESTS) {
     if (day.punches.length >= c.at && !day.chests[c.at]) {
       day.chests[c.at] = true;
-      S.pounds += c.pounds;
+      store.addPounds(S, c.pounds);
       S.xp += c.xp;
-      if (c.lure) S.inventory[c.lure] = (S.inventory[c.lure] || 0) + 1;
+      if (c.lure) store.addLure(S, c.lure);
       chests.push(c);
     }
   }
@@ -975,7 +961,7 @@ function finishSession() {
     chests,
     badges,
     levelUp: lvAfter.level > session.startLevel ? lvAfter : null,
-    pounds: S.pounds - session.startPounds,
+    pounds: S.earned - session.startEarned,
     xp: S.xp - session.startXp,
   };
   const done = session;
@@ -986,6 +972,10 @@ function finishSession() {
   window.scrollTo(0, 0);
   if (done.summary.levelUp) setTimeout(() => sfx.levelUp(), 300);
   else if (done.summary.pounds > 0) setTimeout(() => sfx.coin(), 300);
+  if (didSomething) {
+    noteActivity();
+    maybeAskAfterSession();
+  }
 }
 
 function checkBadgesNow(hour) {
@@ -1002,8 +992,8 @@ function viewSummary() {
   const stat = (label, value) => `<div class="stat"><b>${value}</b><span>${label}</span></div>`;
   return `<main class="page summary">
     <section class="sum-head">
-      <div class="logo small">POUND<span>FIGHTER</span></div>
-      <h1>${s.captured.length ? 'Victory!' : s.reps ? 'Good effort' : 'Session ended'}</h1>
+      <div class="logo small">POUND<span class="gold-text">FIGHTER</span></div>
+      <h1 class="${s.captured.length ? 'gold-text big-win' : ''}">${s.captured.length ? 'Victory!' : s.reps ? 'Good effort' : 'Session ended'}</h1>
       <p class="muted">${s.captured.length ? `${s.captured.length} monster${s.captured.length > 1 ? 's' : ''} captured. Your glutes thank you.` : 'Every rep counts. Come back in an hour for another punch.'}</p>
     </section>
     <section class="stats">
@@ -1037,29 +1027,17 @@ function viewSummary() {
       <div class="panel-head"><h2>Today's punch card</h2><span class="muted small">${day.punches.length}/${D.PUNCH_SLOTS}</span></div>
       ${punchCard(day)}
     </section>
+    ${hasHost && online.status === 'ready' && !online.account ? `<section class="panel gold-panel save-nudge">
+      <div class="acct-crest">${I.shield}</div>
+      <div><b>Don't lose your monsters</b><span class="small">Create a free account to save your progress.</span></div>
+      <button class="btn small gold" data-action="auth" data-mode="signup">Save</button>
+    </section>` : ''}
     <div class="row-btns sticky">
       <button class="btn" data-action="go" data-to="home">Home</button>
       <button class="btn primary" data-action="start" data-pos="${s.pos}">Fight again</button>
     </div>
   </main>`;
 }
-
-// ---------- Nudges ----------
-
-setInterval(() => {
-  const mins = S.settings.nudge;
-  if (!mins || session || !('Notification' in window) || Notification.permission !== 'granted') return;
-  const h = new Date().getHours();
-  if (h < 7 || h >= 21) return;
-  const since = Date.now() - Math.max(S.lastSessionAt, lastNudge);
-  if (since < mins * 60000) return;
-  lastNudge = Date.now();
-  const pool = D.MONSTERS.filter((x) => x.rarity !== 'legendary');
-  const m = pool[Math.floor(Math.random() * pool.length)];
-  try {
-    new Notification(`A wild ${m.name} appeared!`, { body: 'One minute to catch it. Brain off, glutes on.', tag: 'poundfighter-nudge' });
-  } catch (e) { /* some browsers only allow notifications from a service worker */ }
-}, 60000);
 
 // ---------- Events ----------
 
@@ -1101,9 +1079,8 @@ const actions = {
   monster: (el) => showMonster(el.dataset.id),
   'buy-lure': (el) => {
     const l = D.LURES.find((x) => x.id === el.dataset.id);
-    if (S.pounds < l.price) return toast(`You need ${coin(l.price - S.pounds)} more. Go pound some reps!`, 'warn');
-    S.pounds -= l.price;
-    S.inventory[l.id] = (S.inventory[l.id] || 0) + 1;
+    if (!store.spend(S, l.price)) return toast(`You need ${coin(l.price - store.pounds(S))} more. Go pound some reps!`, 'warn');
+    store.addLure(S, l.id);
     if (!S.armedLure) S.armedLure = l.id;
     persist();
     sfx.coin();
@@ -1118,8 +1095,7 @@ const actions = {
   arena: (el) => {
     const a = D.ARENAS.find((x) => x.id === el.dataset.id);
     if (!S.arenas.includes(a.id)) {
-      if (S.pounds < a.price) return toast(`You need ${coin(a.price - S.pounds)} more for ${esc(a.name)}.`, 'warn');
-      S.pounds -= a.price;
+      if (!store.spend(S, a.price)) return toast(`You need ${coin(a.price - store.pounds(S))} more for ${esc(a.name)}.`, 'warn');
       S.arenas.push(a.id);
       sfx.coin();
       toast(`${esc(a.name)} unlocked!`);
@@ -1130,6 +1106,10 @@ const actions = {
   },
   reset: () => openModal(`<div class="confirm"><h3>Reset all progress?</h3><p class="muted">Your monsters, pounds, badges and streak will be gone for good.</p>
     <div class="row-btns"><button class="btn" data-action="close-modal">Keep it</button><button class="btn danger" data-action="reset-yes">Reset</button></div></div>`),
+  'hide-install': () => {
+    store.deviceSet({ hideInstall: true });
+    render();
+  },
   'reset-yes': () => {
     S = store.resetAll();
     applySettings();
@@ -1166,6 +1146,8 @@ const actions = {
   },
 };
 
+Object.assign(actions, onlineActions, reminderActions);
+
 document.addEventListener('click', (e) => {
   const el = e.target.closest('[data-action]');
   if (!el) return;
@@ -1182,8 +1164,8 @@ document.addEventListener('pointerdown', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && modalRoot.classList.contains('open')) return closeModal();
-  if (route === 'fight' && session && (e.code === 'Space' || e.key === 'Enter') && !modalRoot.classList.contains('open')) {
+  if (e.key === 'Escape' && modalOpen()) return closeModal();
+  if (route === 'fight' && session && (e.code === 'Space' || e.key === 'Enter') && !modalOpen()) {
     e.preventDefault();
     const f = cur();
     if (f.phase === 'fight') onRep('tap');
@@ -1205,22 +1187,38 @@ document.addEventListener('input', (e) => {
   persist();
 });
 
-document.addEventListener('change', async (e) => {
-  if (e.target.dataset.setting !== 'nudge') return;
-  const n = Number(e.target.value);
-  S.settings.nudge = n;
-  persist();
-  if (n && 'Notification' in window && Notification.permission === 'default') {
-    try { await Notification.requestPermission(); } catch (err) { /* ignored */ }
-  }
-  if (n && (!('Notification' in window) || Notification.permission !== 'granted')) {
-    toast('Notifications are blocked, so nudges can’t show. Check your browser settings.', 'warn');
-  }
-});
+window.addEventListener('pagehide', saveLocal);
 
-window.addEventListener('pagehide', persist);
+const ctx = {
+  getS: () => S,
+  setS: (next) => {
+    S = next;
+    applySettings();
+  },
+  saveLocal,
+  save: persist,
+  refresh,
+  go,
+  route: () => route,
+  inFight: () => route === 'fight',
+  contextInfo: () => ({
+    route,
+    ua: navigator.userAgent,
+    screen: `${screen.width}x${screen.height}@${window.devicePixelRatio || 1}`,
+    viewport: `${window.innerWidth}x${window.innerHeight}`,
+    standalone: env.standalone,
+    lang: navigator.language,
+    tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    mic: S.settings.mic,
+    micSupported: detector.supported,
+    level: store.levelInfo(S.xp).level,
+    signedIn: !!online.account,
+  }),
+};
 
 render();
+initOnline(ctx);
+initReminders(ctx);
 
 // Handy for testing in the console
 window.PF = { get state() { return S; }, detector, onRep };

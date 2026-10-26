@@ -21,8 +21,103 @@ db_schema:
     - admin_ui: {order: 5, width: 200}
       name: confirmed_email
       type: bool
+    - admin_ui: {order: 6, width: 200}
+      name: is_admin
+      type: bool
+    - admin_ui: {order: 7, width: 200}
+      name: remembered_logins
+      type: simpleObject
     server: full
     title: Users
+  progress:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: user
+      target: users
+      type: link_single
+    - admin_ui: {order: 1, width: 200}
+      name: data
+      type: simpleObject
+    - admin_ui: {order: 2, width: 200}
+      name: updated
+      type: datetime
+    server: full
+    title: Progress
+  feedback:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: created
+      type: datetime
+    - admin_ui: {order: 1, width: 200}
+      name: status
+      type: string
+    - admin_ui: {order: 2, width: 200}
+      name: kind
+      type: string
+    - admin_ui: {order: 3, width: 200}
+      name: message
+      type: string
+    - admin_ui: {order: 4, width: 200}
+      name: email
+      type: string
+    - admin_ui: {order: 5, width: 200}
+      name: user
+      target: users
+      type: link_single
+    - admin_ui: {order: 6, width: 200}
+      name: context
+      type: simpleObject
+    - admin_ui: {order: 7, width: 200}
+      name: admin_note
+      type: string
+    server: full
+    title: Feedback
+  push_subscriptions:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: endpoint
+      type: string
+    - admin_ui: {order: 1, width: 200}
+      name: keys
+      type: simpleObject
+    - admin_ui: {order: 2, width: 200}
+      name: user
+      target: users
+      type: link_single
+    - admin_ui: {order: 3, width: 200}
+      name: prefs
+      type: simpleObject
+    - admin_ui: {order: 4, width: 200}
+      name: tz_offset
+      type: number
+    - admin_ui: {order: 5, width: 200}
+      name: created
+      type: datetime
+    - admin_ui: {order: 6, width: 200}
+      name: last_sent
+      type: datetime
+    - admin_ui: {order: 7, width: 200}
+      name: last_active
+      type: datetime
+    - admin_ui: {order: 8, width: 200}
+      name: fails
+      type: number
+    server: full
+    title: Push Subscriptions
+  app_settings:
+    client: none
+    columns:
+    - admin_ui: {order: 0, width: 200}
+      name: key
+      type: string
+    - admin_ui: {order: 1, width: 200}
+      name: value
+      type: simpleObject
+    server: full
+    title: App Settings
 dependencies:
 - dep_id: dep_n18z5lce3xl8g
   resolution_hints: {app_id: 4UK6WHQ6UX7AKELK, name: Material 3 Theme, package_name: m3}
@@ -30,7 +125,61 @@ dependencies:
 metadata: {description: 'Fastest way to launch yourself into a workout. Literally be in bed buddy and flex your glutes for 20 seconds. Life is about getting things done. This is your new wake up friend. Lunch time friend. Watching tv friend. Ok I oversold it, but use it anyway.', glutes on: null, logo_img: 'asset:poundfighter.png', title: 'PoundFighter - brain off, glutes on'}
 name: PoundFighter
 native_deps:
-  head_html: "<script>\n\n\n  function isScreenLockSupported() {\n    return ('wakeLock' in navigator);\n  }\n  var screenLock;\n  async function lockWakeState() {\n    console.log(\"asked to keep awake\");\n    if(isScreenLockSupported()){\n      try {\n        screenLock = await navigator.wakeLock.request('screen');\n      } catch(err) {\n        console.log(err.name, err.message);\n      }\n      return screenLock;\n    }\n  }\n  function releaseWakeState() { \n    console.log(\"asked to be able to sleep\");\n    if(typeof screenLock !== \"undefined\" && screenLock != null) {\n      screenLock.release()\n        .then(() => {\n          console.log(\"Lock released 🎈\");\n          screenLock = null;\n        });\n    }\n  }  \n</script>"
+  head_html: |-
+    <script>
+      // Capture the browser's "Install app" prompt so the game can offer it
+      window.pfInstallPrompt = null;
+      function pfNotifyGame(event) {
+        var f = document.querySelector('iframe[data-pf-app]');
+        if (f && f.contentWindow) f.contentWindow.postMessage(JSON.stringify({pf: 1, event: event}), location.origin);
+      }
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.pfInstallPrompt = e;
+        pfNotifyGame('installable');
+      });
+      window.addEventListener('appinstalled', function () {
+        window.pfInstallPrompt = null;
+        pfNotifyGame('installed');
+      });
+      window.pfInstall = async function () {
+        var p = window.pfInstallPrompt;
+        if (!p) return 'unavailable';
+        window.pfInstallPrompt = null;
+        p.prompt();
+        var choice = await p.userChoice;
+        return choice.outcome;
+      };
+    </script>
+    <script>
+
+
+      function isScreenLockSupported() {
+        return ('wakeLock' in navigator);
+      }
+      var screenLock;
+      async function lockWakeState() {
+        console.log("asked to keep awake");
+        if(isScreenLockSupported()){
+          try {
+            screenLock = await navigator.wakeLock.request('screen');
+          } catch(err) {
+            console.log(err.name, err.message);
+          }
+          return screenLock;
+        }
+      }
+      function releaseWakeState() { 
+        console.log("asked to be able to sleep");
+        if(typeof screenLock !== "undefined" && screenLock != null) {
+          screenLock.release()
+            .then(() => {
+              console.log("Lock released 🎈");
+              screenLock = null;
+            });
+        }
+      }  
+    </script>
 package_name: PoundFighter
 runtime_options:
   client_version: '3'
@@ -42,7 +191,7 @@ services:
 - client_config: {}
   server_config: {}
   source: /runtime/services/tables.yml
-- client_config: {allow_signup: false, confirm_email: true, enable_automatically: true, use_email: true}
+- client_config: {allow_remember_me: true, allow_signup: true, confirm_email: false, enable_automatically: true, remember_me_days: 365, use_email: true}
   server_config: {user_table: users}
   source: /runtime/services/anvil/users.yml
 startup: {module: Main, type: form}

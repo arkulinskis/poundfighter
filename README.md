@@ -23,7 +23,14 @@ Around that loop:
   little-and-often across the workday.
 - **Daily quests**, **day streaks**, **badges**, and optional **workday nudges** (browser notifications).
 
-Progress is saved in the browser (localStorage). There are no accounts.
+- **Accounts (optional):** sign up / sign in / forgot password / change password. Progress is saved in the browser
+  and, when signed in, synced to the account. Copies from different devices are merged, never overwritten
+  (counters only go up; pounds are tracked as earned and spent totals so a purchase can't be undone by a merge).
+- **Feedback:** anyone can report a bug or idea (with optional device info). Admins see a **Feedback inbox** in
+  *Me* to review messages, set a status (New / Reviewing / Fixed / Won't fix) and keep private notes.
+- **Move reminders:** push notifications during the player's chosen hours (default weekdays 9–5, every 60 min),
+  pushed back automatically after each workout. The app offers to install itself (home screen / desktop), and on
+  iPhone shows how to add it to the Home Screen, which iOS requires for notifications. Asked once after the first fight.
 
 ## Code layout
 
@@ -39,7 +46,31 @@ theme/assets/app/
   js/data.js         exercises, monsters, quests, badges, shop
   js/store.js        saved progress, levels, quests, streaks, badges
   js/sfx.js          synthesized sound effects + vibration
+  js/ui.js           shared helpers: icons, gold coin, toasts, dialogs
+  js/bridge.js       postMessage link to the Anvil host page
+  js/online.js       accounts, progress sync, feedback form, admin inbox
+  js/reminders.js    install prompt, push reminders (with in-app fallback)
+  sw.js              service worker that shows reminder notifications
 ```
+
+### Server side (Anvil)
+
+```
+client_code/Main/        full-screen iframe + message bridge (game <-> Anvil users/server calls)
+server_code/ServerModule.py  accounts, progress sync, feedback inbox, reminder scheduling
+server_code/push.py      Web Push sender (encryption + VAPID signing, no extra packages)
+anvil.yaml               data tables: progress, feedback, push_subscriptions, app_settings; users.is_admin
+```
+
+### One-time setup after pulling into Anvil
+
+1. **Apply the data table changes** when Anvil asks (new tables and two new columns on Users).
+2. **Make yourself admin:** sign up in the app, then in *Data Tables → Users* tick `is_admin` on your row.
+   Reload the app: *Me* now shows **Feedback inbox**.
+3. **Turn on reminders sending:** in the editor open *Scheduled Tasks*, add `send_reminders`, every 15 minutes.
+   (The VAPID key pair for push is created automatically on first use and stored in `app_settings`.)
+4. Users service: sign-up is on, email confirmation off, "remember me" for a year. Password-reset emails are sent
+   by Anvil's Users service.
 
 ### Hosting
 
@@ -63,5 +94,3 @@ In **Me → Tune the mic** you can watch the live level against the rep line. *S
 the background noise a sound must be (6–30 dB, default 14). *Minimum time between reps* (default 0.45 s)
 stops one grunt from counting twice.
 
-The old Anvil forms (`flipdown_anvil`, `Form1`, `Form2`, `flipdown_javaxcript`) are still in `client_code/` but
-are no longer used.

@@ -226,7 +226,7 @@ function viewHome() {
     </section>
 
     ${sightings()}
-    <p class="foot-links small"><button class="link" data-action="feedback" data-kind="bug">${I.bug} Found a bug?</button><button class="link" data-action="feedback" data-kind="idea">Got an idea?</button></p>
+    <p class="foot-links small"><button class="link" data-action="feedback" data-kind="bug">${I.bug} Found a bug?</button><a class="link" href="https://prepsto.com/#f/32dqx5g" target="_blank" rel="noopener" data-prepsto-open>Got an idea?</a></p>
   </main>
   ${tabbar('home')}`;
 }

@@ -135,7 +135,7 @@ metadata: {description: 'Fastest way to launch yourself into a workout. Literall
 name: PoundFighter
 native_deps:
   head_html: |-
-    <script src="_/theme/legal-kit.js?v=23161149ad"></script>
+    <script src="_/theme/legal-kit.js?v=ff81706eeb"></script>
     <style>
       /* Loading screen: app icon with a spinning gold ring, on the game's dark background.
          Anvil hides its default dots when the spinner has a background image. */

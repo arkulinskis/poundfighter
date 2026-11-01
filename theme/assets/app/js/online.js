@@ -1,4 +1,4 @@
-// Accounts, progress sync, feedback and the admin feedback inbox.
+// Accounts, progress sync, the feedback button (Prepsto) and the admin feedback inbox (older messages).
 // All server work goes through the Anvil host page (bridge.js).
 
 import { call, server, hello, hasHost, on } from './bridge.js';
@@ -104,7 +104,7 @@ const AUTH_ERRORS = {
   UserExists: 'There is already an account with that email. Try signing in.',
   EmailNotConfirmed: 'Please confirm your email first. Check your inbox for the link.',
   TooManyPasswordFailures: 'Too many tries. Reset your password, or wait a little and try again.',
-  AccountIsNotEnabled: 'This account is switched off. Send feedback if that is a mistake.',
+  AccountIsNotEnabled: 'This account is switched off. Submit feedback if that is a mistake.',
 };
 const errText = (e) => AUTH_ERRORS[e.code] || e.message || 'Something went wrong. Please try again.';
 
@@ -267,39 +267,11 @@ async function doLogout() {
 
 // ---------------------------------------------------------------- feedback
 
-export function openFeedback(kind = 'bug') {
-  const kinds = [['bug', 'Bug'], ['idea', 'Idea'], ['other', 'Other']];
-  openModal(`<form class="fb-form" data-form="feedback" novalidate>
-    <h3>${I.bug} Send feedback</h3>
-    <p class="muted small">Found a bug or have an idea? It goes straight to the person who builds PoundFighter.</p>
-    <div class="seg kinds" role="radiogroup" aria-label="Type">
-      ${kinds.map(([k, label]) => `<label class="seg-btn ${k === kind ? 'on' : ''}"><input type="radio" name="kind" value="${k}" ${k === kind ? 'checked' : ''}><b>${label}</b></label>`).join('')}
-    </div>
-    <label class="field"><span>What happened?</span>
-      <textarea name="message" rows="5" maxlength="4000" required placeholder="What did you do, what did you expect, and what happened instead?"></textarea></label>
-    ${online.account ? '' : `<label class="field"><span>Your email <i class="muted">(optional, so we can reply)</i></span><input type="email" name="email" autocomplete="email"></label>`}
-    <label class="check"><input type="checkbox" name="withInfo"> Include device info (browser, screen size, app version)</label>
-    ${LK ? `<p class="small muted">How we use what you send: ${legalLink('Privacy Policy', 'privacy')}</p>` : ''}
-    <p class="form-error" id="formErr" role="alert"></p>
-    <div class="row-btns"><button type="button" class="btn" data-action="close-modal">Cancel</button><button class="btn gold" type="submit">Send</button></div>
-  </form>`);
-}
-
-async function onFeedbackSubmit(form) {
-  const message = form.message.value.trim();
-  if (message.length < 5) return setErr('Please tell us a little more.');
-  const kind = (form.querySelector('input[name=kind]:checked') || {}).value || 'other';
-  const email = form.email ? form.email.value.trim() : null;
-  const context = form.withInfo.checked ? { version: APP_VERSION, ...ctx.contextInfo() } : { version: APP_VERSION };
-  busy(form, true);
-  try {
-    await server('submit_feedback', kind, message, email, context);
-    closeModal();
-    toast(`${I.check} Thanks! Your feedback was sent.`);
-  } catch (e) {
-    busy(form, false);
-    setErr(errText(e));
-  }
+// Every feedback button opens the Prepsto panel: the only feedback channel (widget.js in index.html slides it in;
+// codes in APP_MAKER/prepsto-links.json). The admin inbox below still lists older messages.
+export function openFeedback() {
+  if (window.Prepsto && window.Prepsto.open) window.Prepsto.open();
+  else window.open('https://prepsto.com/#f/32dqx5g', '_blank', 'noopener');
 }
 
 // ---------------------------------------------------------------- admin inbox
@@ -388,7 +360,7 @@ export const onlineActions = {
   logout: () => confirmLogout(),
   'logout-yes': () => doLogout(),
   'sync-now': () => syncNow(),
-  feedback: (el) => openFeedback(el.dataset.kind || 'bug'),
+  feedback: () => openFeedback(),
   'fb-filter': (el) => { online.admin.filter = el.dataset.f; loadAdmin(); },
   'fb-refresh': () => loadAdmin(),
   'fb-save': (el) => saveFeedbackItem(el.dataset.id),
@@ -404,7 +376,7 @@ document.addEventListener('submit', (e) => {
   const form = e.target.closest('form[data-form]');
   if (!form) return;
   e.preventDefault();
-  const handlers = { auth: onAuthSubmit, password: onPasswordSubmit, feedback: onFeedbackSubmit };
+  const handlers = { auth: onAuthSubmit, password: onPasswordSubmit };
   const fn = handlers[form.dataset.form];
   if (fn) fn(form);
 });

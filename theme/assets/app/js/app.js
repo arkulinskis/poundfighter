@@ -226,7 +226,7 @@ function viewHome() {
     </section>
 
     ${sightings()}
-    <p class="foot-links small"><button class="link" data-action="feedback" data-kind="bug">${I.bug} Found a bug?</button><a class="link" href="https://prepsto.com/#f/32dqx5g" target="_blank" rel="noopener" data-prepsto-open>Got an idea?</a></p>
+    <p class="foot-links small"><a class="link" href="https://prepsto.com/#f/32dqx5g" target="_blank" rel="noopener" data-prepsto-open>Submit feedback</a></p>
   </main>
   ${tabbar('home')}`;
 }
@@ -395,7 +395,7 @@ function viewMe() {
       </label>
       <label class="set-row"><span><b>Sound effects</b></span><button class="switch ${st.sound ? 'on' : ''}" data-action="toggle" data-key="sound" role="switch" aria-checked="${st.sound}"><i></i></button></label>
       <label class="set-row"><span><b>Vibration</b></span><button class="switch ${st.vibrate ? 'on' : ''}" data-action="toggle" data-key="vibrate" role="switch" aria-checked="${st.vibrate}"><i></i></button></label>
-      <div class="set-row"><span><b>Send feedback</b><span class="small muted">Report a bug or suggest an idea.</span></span><button class="btn small" data-action="feedback" data-kind="bug">${I.bug} Report</button></div>
+      <div class="set-row"><span><b>Submit feedback</b><span class="small muted">Report a bug or suggest an idea.</span></span><button class="btn small" data-action="feedback">Open</button></div>
       ${online.account ? '' : `<div class="set-row"><span><b>Reset progress</b><span class="small muted">Wipes the progress saved on this device.</span></span><button class="btn small danger" data-action="reset">Reset</button></div>`}
     </section>
     <p class="foot-links small muted">PoundFighter v${APP_VERSION}</p>

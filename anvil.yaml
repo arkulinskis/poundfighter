@@ -131,11 +131,35 @@ dependencies:
 - dep_id: dep_n18z5lce3xl8g
   resolution_hints: {app_id: 4UK6WHQ6UX7AKELK, name: Material 3 Theme, package_name: m3}
   version: {version_tag: v1.2.5}
-metadata: {description: 'Fastest way to launch yourself into a workout. Literally be in bed buddy and flex your glutes for 20 seconds. Life is about getting things done. This is your new wake up friend. Lunch time friend. Watching tv friend. Ok I oversold it, but use it anyway.', glutes on: null, logo_img: 'asset:poundfighter.png', title: 'PoundFighter - brain off, glutes on'}
+metadata:
+  description: "Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters."
+  logo_img: "asset:poundfighter.png"
+  title: "PoundFighter: micro workouts as a monster-collecting game"
 name: PoundFighter
 native_deps:
   head_html: |-
     <script src="_/theme/legal-kit.js?v=ff81706eeb"></script>
+    <!-- seo:start (APP_MAKER/seo: edit seo/apps/poundfighter.json and run seo.py, not here) -->
+    <link rel="canonical" href="https://poundfighter.com/">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="keywords" content="micro workouts, desk exercises, workout game, exercise at your desk, workout in bed, fitness game browser, glute exercises, office workout app, gamified fitness">
+    <meta name="author" content="Arkvital">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="PoundFighter">
+    <meta property="og:title" content="PoundFighter: micro workouts as a monster-collecting game">
+    <meta property="og:description" content="Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters.">
+    <meta property="og:locale" content="en_CA">
+    <meta property="og:url" content="https://poundfighter.com/">
+    <meta property="og:image" content="https://poundfighter.com/_/theme/og-image.png">
+    <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="PoundFighter: Brain off, glutes on. Micro workouts that catch monsters.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PoundFighter: micro workouts as a monster-collecting game">
+    <meta name="twitter:description" content="Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters.">
+    <meta name="twitter:image" content="https://poundfighter.com/_/theme/og-image.png">
+    <link rel="alternate" type="text/plain" title="PoundFighter for AI assistants" href="https://poundfighter.com/llms.txt">
+    <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoGame", "@id": "https://poundfighter.com/#app", "name": "PoundFighter", "url": "https://poundfighter.com/", "description": "Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters.", "image": "https://poundfighter.com/_/theme/og-image.png", "inLanguage": "en", "publisher": {"@id": "https://arkvital.com/#org"}, "keywords": "micro workouts, desk exercises, workout game, exercise at your desk, workout in bed, fitness game browser, glute exercises, office workout app, gamified fitness", "applicationCategory": "HealthApplication", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern web browser", "featureList": ["Workouts for in bed, at your desk or standing", "Voice rep counting that learns the room's background noise", "36 monsters in three habitats and four rarities to collect", "Coins, combos, lures, arenas, XP and ranks", "A daily punch card that rewards little-and-often"], "audience": {"@type": "Audience", "audienceType": "Busy people who want little-and-often exercise during the day"}}, {"@type": "WebSite", "@id": "https://poundfighter.com/#site", "url": "https://poundfighter.com/", "name": "PoundFighter", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
+    <!-- seo:end -->
     <style>
       /* Loading screen: app icon with a spinning gold ring, on the game's dark background.
          Anvil hides its default dots when the spinner has a background image. */

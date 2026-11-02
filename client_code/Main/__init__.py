@@ -8,6 +8,15 @@ from ._anvil_designer import MainTemplate
 from .. import legal
 
 
+def _google_step_done():
+  """After login_with_google() gave None: did the person finish the Google window (they just have no account yet)?"""
+  try:
+    import anvil.google.auth
+    return bool(anvil.google.auth.get_user_email())
+  except Exception:
+    return True  # can't tell: go on to sign-up, which asks Google again if needed
+
+
 class Main(MainTemplate):
   """Full-screen wrapper around the PoundFighter web app.
 
@@ -80,6 +89,14 @@ class Main(MainTemplate):
       # Email confirmation is switched on: they must click the link first
       return {'needs_confirmation': True}
     return account
+
+  def m_google(self):
+    """Continue with Google: sign in, or create the account on the first visit."""
+    if anvil.users.login_with_google(remember=True) is None:
+      if not _google_step_done() or anvil.users.signup_with_google(remember=True) is None:
+        raise Exception('Google sign-in was cancelled.')
+    legal.refresh_soon()  # records the sign-up tick box, or reminds about the Privacy & Terms
+    return anvil.server.call('get_account')
 
   def m_logout(self):
     anvil.users.logout()

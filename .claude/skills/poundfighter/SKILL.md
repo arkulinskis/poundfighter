@@ -54,6 +54,7 @@ server_code/push.py      Web Push (VAPID) sending
 
 ## Gotchas
 
+- **Continue with Google** (client_code/Main `m_google` + theme/assets/app/js/online.js onGoogle): `login_with_google()` returns None for someone without an account, so the code then calls `signup_with_google()`; on the sign-up view it needs the Privacy & Terms tick first. Needs `use_google` + the Google service in anvil.yaml.
 - anvil.yaml `metadata` has a stray key `glutes on: null` (left over from an old title edit). Harmless; tidy it when next editing metadata.
 - iOS only allows notifications for apps added to the Home Screen; the app explains this.
 - The mic needs a user gesture and HTTPS; the screen wake lock likewise.

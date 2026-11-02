@@ -37,6 +37,7 @@ export function defaults() {
       sensitivity: 14,
       minGap: 450,
       sound: true,
+      music: true,
       vibrate: true,
       length: 3,
       micSetupDone: false,

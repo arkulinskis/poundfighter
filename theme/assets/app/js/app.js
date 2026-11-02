@@ -38,6 +38,20 @@ function applySettings() {
     vibrate: S.settings.vibrate,
     onPlaySound: (ms) => detector.suppress(ms), // don't let our own sounds count as reps
   });
+  syncMusic();
+}
+
+// ---------- Music: real tracks streamed by ArkMusic (js/ark-music.js, from APP_MAKER/media) ----------
+// Never while the mic counts reps or is being tuned: it would hear the music and count it as reps.
+const MUSIC = { menu: ['cosmic', 'dont-stress-out'], fight: ['how-do-you-love'], summary: ['nailed-it', 'cosmic'] };
+function syncMusic() {
+  const M = window.ArkMusic;
+  if (!M) return;
+  M.enabled(S.settings.music !== false);
+  if (micTest || route === 'admin') return M.stop(0.3);
+  if (route === 'fight') return session && session.mic ? M.stop(0.3) : M.play(MUSIC.fight, { volume: 0.5 });
+  if (route === 'summary') return M.play(MUSIC.summary, { volume: 0.45 });
+  M.play(MUSIC.menu, { volume: 0.4, shuffle: true });
 }
 applySettings();
 
@@ -98,6 +112,7 @@ function tabbar(active) {
 
 function render() {
   document.body.dataset.route = route;
+  syncMusic();
   if (route === 'fight') return renderFight();
   const views = { home: viewHome, collection: viewCollection, shop: viewShop, me: viewMe, summary: viewSummary, admin: viewAdmin };
   app.innerHTML = views[route]();
@@ -394,6 +409,7 @@ function viewMe() {
         <input type="range" min="250" max="1500" step="50" value="${st.minGap}" data-setting="minGap" aria-label="Minimum time between reps">
       </label>
       <label class="set-row"><span><b>Sound effects</b></span><button class="switch ${st.sound ? 'on' : ''}" data-action="toggle" data-key="sound" role="switch" aria-checked="${st.sound}"><i></i></button></label>
+      <label class="set-row"><span><b>Music</b><span class="small muted">In fights it plays only when voice reps are off, so the mic never counts it.</span></span><button class="switch ${st.music !== false ? 'on' : ''}" data-action="toggle" data-key="music" role="switch" aria-checked="${st.music !== false}"><i></i></button></label>
       <label class="set-row"><span><b>Vibration</b></span><button class="switch ${st.vibrate ? 'on' : ''}" data-action="toggle" data-key="vibrate" role="switch" aria-checked="${st.vibrate}"><i></i></button></label>
       <div class="set-row"><span><b>Submit feedback</b><span class="small muted">Report a bug or suggest an idea.</span></span><button class="btn small" data-action="feedback">Open</button></div>
       ${online.account ? '' : `<div class="set-row"><span><b>Reset progress</b><span class="small muted">Wipes the progress saved on this device.</span></span><button class="btn small danger" data-action="reset">Reset</button></div>`}
@@ -410,6 +426,7 @@ const sensLabel = (s) => (s <= 10 ? 'High' : s <= 18 ? 'Medium' : 'Low') + ` (${
 async function openMicTest() {
   getAudioContext();
   micTest = { count: 0 };
+  syncMusic();
   openModal(`<div class="mictest">
     <h3>${I.mic} Tune your mic</h3>
     <p class="muted small" id="tStatus">Asking for microphone access…</p>
@@ -428,6 +445,7 @@ async function openMicTest() {
     onClose: () => {
       micTest = null;
       if (!session) detector.stop();
+      syncMusic();
     },
   });
   try {
@@ -561,6 +579,7 @@ async function startSession(pos) {
       toast(micErrorText(e), 'warn');
     }
     updateMicBar();
+    syncMusic();
   }
   if (session) beginRound();
 }

@@ -63,3 +63,7 @@ server_code/push.py      Web Push (VAPID) sending
 
 From `C:/Users/arkvi/Documents/CLAUDE/APP_MAKER/legal-kit`. Don't edit `theme/assets/legal-kit.js`, `client_code/legal.py` or `server_code/legal_server.py` here: change `apps/poundfighter.json` there (it lists the microphone and notifications), run `python -I build.py poundfighter && python -I install.py poundfighter`, then commit and push here.
 - Sign-up in js/online.js keeps the consent tick box.
+
+## Music (Nov 2026)
+
+`syncMusic()` in js/app.js picks by route; it must never play while the mic counts reps or the mic test is open (session.mic / micTest). Setting `S.settings.music`. Player = `window.ArkMusic` (copy written by `APP_MAKER/tools/music_sync.py`; don't edit the copy, edit `APP_MAKER/media/public/ark-music.js` and re-sync). Track slugs and feel: `APP_MAKER/media/manifest.json`; hosting: `APP_MAKER/media/README.md`. Test playback in headless Chrome with `--autoplay-policy=no-user-gesture-required` and read `ArkMusic.state()`.

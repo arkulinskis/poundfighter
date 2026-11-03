@@ -367,6 +367,7 @@ body[data-route=fight] { overflow: hidden; }
   overflow-y: auto;
 }
 .fight > * { width: 100%; max-width: 520px; }
+.fight > .overlay { max-width: none; } /* the capture overlay covers the whole screen */
 .fight-top { display: flex; align-items: center; justify-content: space-between; }
 .round { font-family: var(--display); font-size: 18px; }
 .round span { color: var(--muted); }

@@ -252,6 +252,7 @@ function viewHome() {
       <p class="ytf-note">The video loads from YouTube when you press play. <a class="link" href="https://www.youtube.com/watch?v=X7OTOzRsGy8" target="_blank" rel="noopener">Watch on YouTube ↗</a></p>
     </section>
     <p class="foot-links small"><a class="link" href="https://prepsto.com/#f/32dqx5g" target="_blank" rel="noopener" data-prepsto-open>Submit feedback</a></p>
+    <p class="foot-links small">Contact developer: <a href="https://arkvital.com" target="_blank" rel="noopener">arkvital.com</a> · Parent company: <a href="https://addanapp.com" target="_blank" rel="noopener">addanapp.com</a></p>
   </main>
   ${tabbar('home')}`;
 }

@@ -1,0 +1,28 @@
+<div class="dlg auth">
+  <div class="auth-head">
+    <div class="acct-crest"><i class="ic ic-shield" anvil:name="crest_icon"></i></div>
+    <h2 class="dlg-title" anvil:dom-node="heading">Welcome back</h2>
+    <p class="muted small" anvil:dom-node="blurb"></p>
+  </div>
+  <label class="field"><span>Email</span>
+    <anvil-component type="TextBox" name="email_box" prop:type="email"></anvil-component>
+  </label>
+  <label class="field" anvil:name="pw_field"><span>Password</span>
+    <anvil-component type="TextBox" name="password_box" prop:hide_text="true"></anvil-component>
+  </label>
+  <label class="field" anvil:name="pw2_field"><span>Password again</span>
+    <anvil-component type="TextBox" name="password2_box" prop:hide_text="true"></anvil-component>
+  </label>
+  <div anvil:name="consent_box"><div anvil:dom-node="consent"></div></div>
+  <anvil-component type="Label" name="message" prop:visible="false" prop:role='["msg-error"]'></anvil-component>
+  <anvil-component type="Button" name="submit_button" prop:text="Sign in" prop:role='["btn", "gold", "big", "btn-block"]'></anvil-component>
+  <div class="auth-google" anvil:name="google_part">
+    <p class="muted small or-line">or</p>
+    <anvil-component type="Button" name="google_button" prop:text="Continue with Google" prop:icon="_/theme/google-g.svg" prop:role='["btn", "big", "btn-block", "au-google"]'></anvil-component>
+  </div>
+  <div class="auth-links">
+    <anvil-component type="Button" name="forgot_link" prop:text="Forgot password?" prop:role='["link"]'></anvil-component>
+    <anvil-component type="Button" name="signup_link" prop:text="New here? Create an account" prop:role='["link"]'></anvil-component>
+    <anvil-component type="Button" name="signin_link" prop:text="I already have an account" prop:role='["link"]'></anvil-component>
+  </div>
+</div>

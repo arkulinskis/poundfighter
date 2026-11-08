@@ -1,0 +1,22 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page">
+      <section class="page-head">
+        <h1>Shop</h1>
+        <p class="muted">Every rep earns pounds. Combos earn more. You have <span class="coin"><i class="coin-ic" aria-hidden="true">£</i><span anvil:dom-node="pounds">0</span></span></p>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Lures</h2><span class="muted small">Used up on your next fight</span></div>
+        <div class="shop-list">
+          <anvil-component type="RepeatingPanel" name="lures_panel" prop:item_template="PoundFighter.Items.LureRow" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Arenas</h2><span class="muted small">Where your fights happen</span></div>
+        <div class="arenas">
+          <anvil-component type="RepeatingPanel" name="arenas_panel" prop:item_template="PoundFighter.Items.ArenaTile" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+    </div>
+  </anvil-block>
+</anvil-form>

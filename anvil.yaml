@@ -1,143 +1,227 @@
 allow_embedding: false
 db_schema:
-  users:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: email
-      type: string
-    - admin_ui: {order: 1, width: 200}
-      name: enabled
-      type: bool
-    - admin_ui: {order: 2, width: 200}
-      name: last_login
-      type: datetime
-    - admin_ui: {order: 3, width: 200}
-      name: password_hash
-      type: string
-    - admin_ui: {order: 4, width: 200}
-      name: n_password_failures
-      type: number
-    - admin_ui: {order: 5, width: 200}
-      name: confirmed_email
-      type: bool
-    - admin_ui: {order: 6, width: 200}
-      name: is_admin
-      type: bool
-    - admin_ui: {order: 7, width: 200}
-      name: remembered_logins
-      type: simpleObject
-    - admin_ui: {order: 8, width: 200}
-      name: legal_version
-      type: string
-    - admin_ui: {order: 9, width: 200}
-      name: legal_accepted_at
-      type: datetime
-    - admin_ui: {order: 10, width: 200}
-      name: legal_source
-      type: string
-    server: full
-    title: Users
-  progress:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: user
-      target: users
-      type: link_single
-    - admin_ui: {order: 1, width: 200}
-      name: data
-      type: simpleObject
-    - admin_ui: {order: 2, width: 200}
-      name: updated
-      type: datetime
-    server: full
-    title: Progress
-  feedback:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: created
-      type: datetime
-    - admin_ui: {order: 1, width: 200}
-      name: status
-      type: string
-    - admin_ui: {order: 2, width: 200}
-      name: kind
-      type: string
-    - admin_ui: {order: 3, width: 200}
-      name: message
-      type: string
-    - admin_ui: {order: 4, width: 200}
-      name: email
-      type: string
-    - admin_ui: {order: 5, width: 200}
-      name: user
-      target: users
-      type: link_single
-    - admin_ui: {order: 6, width: 200}
-      name: context
-      type: simpleObject
-    - admin_ui: {order: 7, width: 200}
-      name: admin_note
-      type: string
-    server: full
-    title: Feedback
-  push_subscriptions:
-    client: none
-    columns:
-    - admin_ui: {order: 0, width: 200}
-      name: endpoint
-      type: string
-    - admin_ui: {order: 1, width: 200}
-      name: keys
-      type: simpleObject
-    - admin_ui: {order: 2, width: 200}
-      name: user
-      target: users
-      type: link_single
-    - admin_ui: {order: 3, width: 200}
-      name: prefs
-      type: simpleObject
-    - admin_ui: {order: 4, width: 200}
-      name: tz_offset
-      type: number
-    - admin_ui: {order: 5, width: 200}
-      name: created
-      type: datetime
-    - admin_ui: {order: 6, width: 200}
-      name: last_sent
-      type: datetime
-    - admin_ui: {order: 7, width: 200}
-      name: last_active
-      type: datetime
-    - admin_ui: {order: 8, width: 200}
-      name: fails
-      type: number
-    server: full
-    title: Push Subscriptions
   app_settings:
     client: none
     columns:
-    - admin_ui: {order: 0, width: 200}
+    - admin_ui:
+        order: 0
+        width: 200
       name: key
       type: string
-    - admin_ui: {order: 1, width: 200}
+    - admin_ui:
+        order: 1
+        width: 200
       name: value
       type: simpleObject
     server: full
     title: App Settings
-dependencies:
-- dep_id: dep_n18z5lce3xl8g
-  resolution_hints: {app_id: 4UK6WHQ6UX7AKELK, name: Material 3 Theme, package_name: m3}
-  version: {version_tag: v1.2.5}
+  feedback:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 1
+        width: 200
+      name: status
+      type: string
+    - admin_ui:
+        order: 2
+        width: 200
+      name: kind
+      type: string
+    - admin_ui:
+        order: 3
+        width: 200
+      name: message
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: email
+      type: string
+    - admin_ui:
+        order: 5
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 6
+        width: 200
+      name: context
+      type: simpleObject
+    - admin_ui:
+        order: 7
+        width: 200
+      name: admin_note
+      type: string
+    server: full
+    title: Feedback
+  progress:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 1
+        width: 200
+      name: data
+      type: simpleObject
+    - admin_ui:
+        order: 2
+        width: 200
+      name: updated
+      type: datetime
+    server: full
+    title: Progress
+  push_subscriptions:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: endpoint
+      type: string
+    - admin_ui:
+        order: 1
+        width: 200
+      name: keys
+      type: simpleObject
+    - admin_ui:
+        order: 2
+        width: 200
+      name: user
+      target: users
+      type: link_single
+    - admin_ui:
+        order: 3
+        width: 200
+      name: prefs
+      type: simpleObject
+    - admin_ui:
+        order: 4
+        width: 200
+      name: tz_offset
+      type: number
+    - admin_ui:
+        order: 5
+        width: 200
+      name: created
+      type: datetime
+    - admin_ui:
+        order: 6
+        width: 200
+      name: last_sent
+      type: datetime
+    - admin_ui:
+        order: 7
+        width: 200
+      name: last_active
+      type: datetime
+    - admin_ui:
+        order: 8
+        width: 200
+      name: fails
+      type: number
+    server: full
+    title: Push Subscriptions
+  users:
+    client: none
+    columns:
+    - admin_ui:
+        order: 0
+        width: 200
+      name: email
+      type: string
+    - admin_ui:
+        order: 1
+        width: 200
+      name: enabled
+      type: bool
+    - admin_ui:
+        order: 2
+        width: 200
+      name: last_login
+      type: datetime
+    - admin_ui:
+        order: 3
+        width: 200
+      name: password_hash
+      type: string
+    - admin_ui:
+        order: 4
+        width: 200
+      name: n_password_failures
+      type: number
+    - admin_ui:
+        order: 5
+        width: 200
+      name: confirmed_email
+      type: bool
+    - admin_ui:
+        order: 6
+        width: 200
+      name: is_admin
+      type: bool
+    - admin_ui:
+        order: 7
+        width: 200
+      name: remembered_logins
+      type: simpleObject
+    - admin_ui:
+        order: 8
+        width: 200
+      name: legal_version
+      type: string
+    - admin_ui:
+        order: 9
+        width: 200
+      name: legal_accepted_at
+      type: datetime
+    - admin_ui:
+        order: 10
+        width: 200
+      name: legal_source
+      type: string
+    server: full
+    title: Users
 metadata:
-  description: "Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters."
-  logo_img: "asset:poundfighter.png"
-  title: "PoundFighter: micro workouts as a monster-collecting game"
+  description: 'Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing,
+    count them by voice, and capture 36 monsters.'
+  logo_img: asset:poundfighter.png
+  title: 'PoundFighter: micro workouts as a monster-collecting game'
 name: PoundFighter
 native_deps:
-  head_html: |-
+  head_html: |
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#140e0c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link id="ui-favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%23ff6b2c%22/%3E%3Ctext x=%2250%22 y=%2272%22 font-size=%2264%22 text-anchor=%22middle%22 font-family=%22Arial Black,sans-serif%22 fill=%22%231a0d06%22%3EP%3C/text%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="_/theme/app/icon-192.png?v=75d614bea0">
+    <script>
+    /* Keep our tab icon: Anvil adds its own <link rel="icon">, so drop any other icon link. */
+    (function () {
+      function keep() {
+        var ours = document.getElementById('ui-favicon');
+        if (!ours) return;
+        document.querySelectorAll('link[rel~="icon"]').forEach(function (l) { if (l !== ours) l.remove(); });
+      }
+      keep();
+      document.addEventListener('DOMContentLoaded', keep);
+      window.addEventListener('load', keep);
+    })();
+    </script>
     <script src="_/theme/legal-kit.js?v=8c8cb3c953"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/poundfighter.json and run seo.py, not here) -->
     <link rel="canonical" href="https://poundfighter.com/">
@@ -160,41 +244,19 @@ native_deps:
     <link rel="alternate" type="text/plain" title="PoundFighter for AI assistants" href="https://poundfighter.com/llms.txt">
     <script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "VideoGame", "@id": "https://poundfighter.com/#app", "name": "PoundFighter", "url": "https://poundfighter.com/", "description": "Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters.", "image": "https://poundfighter.com/_/theme/og-image.png", "inLanguage": "en", "publisher": {"@id": "https://arkvital.com/#org"}, "keywords": "micro workouts, desk exercises, workout game, exercise at your desk, workout in bed, fitness game browser, glute exercises, office workout app, gamified fitness", "applicationCategory": "HealthApplication", "operatingSystem": "Any (web browser)", "browserRequirements": "Requires JavaScript and a modern web browser", "featureList": ["Workouts for in bed, at your desk or standing", "Voice rep counting that learns the room's background noise", "36 monsters in three habitats and four rarities to collect", "Coins, combos, lures, arenas, XP and ranks", "A daily punch card that rewards little-and-often"], "audience": {"@type": "Audience", "audienceType": "Busy people who want little-and-often exercise during the day"}}, {"@type": "WebSite", "@id": "https://poundfighter.com/#site", "url": "https://poundfighter.com/", "name": "PoundFighter", "publisher": {"@id": "https://arkvital.com/#org"}}, {"@type": "Organization", "@id": "https://arkvital.com/#org", "name": "Arkvital", "url": "https://arkvital.com", "email": "arkvital@outlook.com", "address": {"@type": "PostalAddress", "addressLocality": "Montreal", "addressRegion": "QC", "addressCountry": "CA"}}]}</script>
     <!-- seo:end -->
-    <style>
-      /* Loading screen: app icon with a spinning gold ring, on the game's dark background.
-         Anvil hides its default dots when the spinner has a background image. */
-      html, body { background: #140e0c; }
-      :root { --anvil-spinner-bg: #140e0c; --anvil-spinner-size: 104px; --anvil-spinner-shadow: 0px; }
-      #loadingSpinner.anvil-spinner {
-        width: 104px; height: 104px; top: calc(42% - 52px);
-        background: url(_/theme/app/icon-192.png) center / cover no-repeat, #140e0c;
-        box-shadow: 0 0 40px rgba(255, 190, 40, .45);
-        animation: pf-pulse 1.4s ease-in-out infinite;
-      }
-      #loadingSpinner.anvil-spinner::after {
-        content: ''; position: absolute; inset: -12px; border-radius: 50%;
-        border: 4px solid transparent; border-top-color: #ffd34d; border-right-color: rgba(255, 211, 77, .35);
-        animation: pf-spin .9s linear infinite;
-      }
-      @keyframes pf-pulse { 50% { transform: scale(1.06); box-shadow: 0 0 60px rgba(255, 190, 40, .65); } }
-      @keyframes pf-spin { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { #loadingSpinner.anvil-spinner, #loadingSpinner.anvil-spinner::after { animation-duration: 3s; } }
-    </style>
+    <!-- Prepsto feedback panel: every "Submit feedback" link and button opens it (it is the only feedback channel). Codes: APP_MAKER/prepsto-links.json -->
+    <script src="https://prepsto.com/_/theme/widget.js" data-prepsto="32dqx5g" data-button="false" data-label="Submit feedback" async></script>
     <script>
-      // Capture the browser's "Install app" prompt so the game can offer it
+      // Capture the browser's "Install app" prompt so the app can offer it (client_code/reminders.py listens for pf-install)
       window.pfInstallPrompt = null;
-      function pfNotifyGame(event) {
-        var f = document.querySelector('iframe[data-pf-app]');
-        if (f && f.contentWindow) f.contentWindow.postMessage(JSON.stringify({pf: 1, event: event}), location.origin);
-      }
       window.addEventListener('beforeinstallprompt', function (e) {
         e.preventDefault();
         window.pfInstallPrompt = e;
-        pfNotifyGame('installable');
+        window.dispatchEvent(new CustomEvent('pf-install', { detail: 'installable' }));
       });
       window.addEventListener('appinstalled', function () {
         window.pfInstallPrompt = null;
-        pfNotifyGame('installed');
+        window.dispatchEvent(new CustomEvent('pf-install', { detail: 'installed' }));
       });
       window.pfInstall = async function () {
         var p = window.pfInstallPrompt;
@@ -204,52 +266,38 @@ native_deps:
         var choice = await p.userChoice;
         return choice.outcome;
       };
+      // The game engine (an ES module) resolves this once window.PF exists; client_code/pf.py waits on it
+      window.PFReady = new Promise(function (resolve) { window.__pfReady = resolve; });
     </script>
-    <script>
-
-
-      function isScreenLockSupported() {
-        return ('wakeLock' in navigator);
-      }
-      var screenLock;
-      async function lockWakeState() {
-        console.log("asked to keep awake");
-        if(isScreenLockSupported()){
-          try {
-            screenLock = await navigator.wakeLock.request('screen');
-          } catch(err) {
-            console.log(err.name, err.message);
-          }
-          return screenLock;
-        }
-      }
-      function releaseWakeState() { 
-        console.log("asked to be able to sleep");
-        if(typeof screenLock !== "undefined" && screenLock != null) {
-          screenLock.release()
-            .then(() => {
-              console.log("Lock released 🎈");
-              screenLock = null;
-            });
-        }
-      }  
-    </script>
+    <link rel="stylesheet" href="_/theme/icons.css?v=78efe53179">
+    <link rel="stylesheet" href="_/theme/app.css?v=b06d320c0d">
+    <script src="_/theme/app-kit.js?v=63dadc8370"></script>
+    <script src="_/theme/app/js/ark-music.js?v=884c4f647c"></script>
+    <script type="module" src="_/theme/app/js/pf.js?v=4862e20514"></script>
 package_name: PoundFighter
 runtime_options:
   client_version: '3'
-  legacy_features: {__dict__: true, bootstrap3: true, class_names: true, root_container: true}
-  server_spec: {}
-  server_version: python3-full
+  server_spec:
+    base: python314
   version: 3
 services:
 - client_config: {}
   server_config: {}
   source: /runtime/services/tables.yml
-- client_config: {allow_remember_me: true, allow_signup: true, confirm_email: false, enable_automatically: true, remember_me_days: 365, use_email: true, use_google: true}
-  server_config: {user_table: users}
+- client_config:
+    allow_remember_me: true
+    allow_signup: true
+    confirm_email: false
+    enable_automatically: true
+    remember_me_days: 365
+    use_email: true
+    use_google: true
+  server_config:
+    user_table: users
   source: /runtime/services/anvil/users.yml
 - client_config: {}
   server_config: {}
   source: /runtime/services/google.yml
-startup: {module: Main, type: form}
-startup_form: null
+startup:
+  module: startup
+  type: module

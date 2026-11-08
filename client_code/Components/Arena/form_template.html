@@ -1,0 +1,16 @@
+---
+custom_component: true
+properties:
+  - name: position
+    type: string
+    default_value: ""
+    description: Where the player is (bed, sitting or standing); picks the exercises and the habitat
+    default_binding_prop: true
+toolbox_item:
+  title: Arena
+  group: PoundFighter
+help_text: |
+  The fight screen, drawn and run by the game engine (pf.js): exercise, hidden monster, HP, combos, the mic meter,
+  countdown and capture overlays. A session starts when it shows and stops when it hides.
+---
+<div class="arena-host"><div class="arena-stage" anvil:dom-node="stage"></div></div>

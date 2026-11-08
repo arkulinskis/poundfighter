@@ -1,0 +1,25 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page admin">
+      <div class="admin-bar"><a class="btn small" href="#me"><i class="ic ic-back"></i> Back</a><span class="admin-tag"><i class="ic ic-crown"></i> Admin</span></div>
+      <section class="page-head">
+        <h1 class="gold-text">Feedback inbox</h1>
+        <p class="muted small" anvil:dom-node="totals"></p>
+        <p class="muted small">New feedback arrives in Prepsto (the "Submit feedback" link); this inbox keeps the older messages.</p>
+      </section>
+      <div class="chips-row" role="group" aria-label="Show">
+        <button type="button" class="fchip" data-f="new" anvil:name="f_new" anvil:on-dom:click="self.filter_click">New</button>
+        <button type="button" class="fchip" data-f="reviewing" anvil:name="f_reviewing" anvil:on-dom:click="self.filter_click">Reviewing</button>
+        <button type="button" class="fchip" data-f="fixed" anvil:name="f_fixed" anvil:on-dom:click="self.filter_click">Fixed</button>
+        <button type="button" class="fchip" data-f="wontfix" anvil:name="f_wontfix" anvil:on-dom:click="self.filter_click">Won't fix</button>
+        <button type="button" class="fchip" data-f="all" anvil:name="f_all" anvil:on-dom:click="self.filter_click">All</button>
+        <anvil-component type="Button" name="refresh_button" prop:text="Refresh" prop:role='["fchip-btn", "btn-icon", "ic-refresh"]' prop:tooltip="Refresh"></anvil-component>
+      </div>
+      <anvil-component type="Label" name="message" prop:visible="false"></anvil-component>
+      <div class="panel empty" anvil:name="empty"><p class="muted" anvil:dom-node="empty_text">Nothing here.</p></div>
+      <div class="fb-list">
+        <anvil-component type="RepeatingPanel" name="items_panel" prop:item_template="PoundFighter.Items.FeedbackRow" prop:role='["contents"]'></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

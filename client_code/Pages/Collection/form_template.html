@@ -1,0 +1,18 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page">
+      <section class="page-head">
+        <h1>Collection</h1>
+        <p class="muted" anvil:dom-node="count">0 of 36 monsters captured</p>
+        <div class="bar big gold" role="progressbar" aria-label="Monsters captured" anvil:dom-node="bar"><i anvil:dom-node="fill"></i></div>
+      </section>
+      <nav class="htabs" aria-label="Habitats">
+        <anvil-component type="RepeatingPanel" name="tabs_panel" prop:item_template="PoundFighter.Items.HabitatTab" prop:role='["contents"]'></anvil-component>
+      </nav>
+      <p class="muted small habitat-blurb" anvil:dom-node="blurb"></p>
+      <div class="cards">
+        <anvil-component type="RepeatingPanel" name="cards_panel" prop:item_template="PoundFighter.Items.MonsterCard" prop:role='["contents"]'></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

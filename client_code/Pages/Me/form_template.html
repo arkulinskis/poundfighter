@@ -1,0 +1,120 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page">
+      <section class="page-head profile">
+        <div class="lvl-big shiny" anvil:dom-node="level">1</div>
+        <div>
+          <h1 class="gold-text" anvil:dom-node="rank">Couch Potato</h1>
+          <div class="bar big gold"><i anvil:dom-node="xp_fill"></i></div>
+          <p class="muted small" anvil:dom-node="xp_text"></p>
+        </div>
+      </section>
+
+      <section class="panel account gold-panel" anvil:name="guest_panel">
+        <div class="acct-promo">
+          <div class="acct-crest"><i class="ic ic-shield"></i></div>
+          <div><h2>Save your progress</h2>
+            <p class="small">Keep your monsters, pounds and streak safe in a free account, and play on your phone and computer.</p></div>
+        </div>
+        <div class="row-btns">
+          <anvil-component type="Button" name="sign_in_button" prop:text="Sign in" prop:role='["btn"]'></anvil-component>
+          <anvil-component type="Button" name="sign_up_button" prop:text="Create account" prop:role='["btn", "gold"]'></anvil-component>
+        </div>
+        <p class="small muted"><button type="button" class="link" data-lk-open="overview">Privacy &amp; Terms</button></p>
+      </section>
+
+      <section class="panel account" anvil:name="member_panel">
+        <div class="panel-head"><h2><i class="ic ic-user"></i> Account</h2><span class="admin-tag" anvil:name="admin_tag"><i class="ic ic-crown"></i> Admin</span></div>
+        <div class="acct-row">
+          <b class="acct-email" anvil:dom-node="email"></b>
+          <span class="small muted sync-status"><i class="ic ic-cloudcheck" anvil:name="sync_icon"></i><span anvil:dom-node="sync_text">Ready</span>
+            <anvil-component type="Button" name="retry_button" prop:text="Retry" prop:role='["link"]'></anvil-component></span>
+        </div>
+        <a class="btn gold" href="#admin" anvil:name="inbox_link"><i class="ic ic-inbox"></i> Feedback inbox</a>
+        <div class="row-btns">
+          <anvil-component type="Button" name="password_button" prop:text="Change password" prop:role='["btn", "small", "ic-key"]'></anvil-component>
+          <anvil-component type="Button" name="sign_out_button" prop:text="Sign out" prop:role='["btn", "small", "ic-logout"]'></anvil-component>
+        </div>
+        <p class="small muted"><button type="button" class="link" data-lk-open="overview">Privacy &amp; Terms</button></p>
+      </section>
+
+      <section class="stats">
+        <anvil-component type="RepeatingPanel" name="stats_panel" prop:item_template="PoundFighter.Items.StatTile" prop:role='["contents"]'></anvil-component>
+      </section>
+
+      <section class="panel reminders">
+        <div class="panel-head"><h2><i class="ic ic-bell"></i> Move reminders</h2></div>
+        <p class="muted small">A nudge during your day to do one quick fight. Sitting less is the whole point.</p>
+        <div class="install-row" anvil:name="install_row">
+          <div class="acct-crest small"><i class="ic ic-download"></i></div>
+          <div><b>Install the app</b><span class="small muted" anvil:dom-node="install_hint">One tap to open, and reminders that arrive even when it is closed.</span></div>
+          <anvil-component type="Button" name="install_button" prop:text="Install" prop:role='["btn", "small", "gold"]'></anvil-component>
+        </div>
+        <p class="small installed" anvil:name="installed_note"><i class="ic ic-check"></i> Installed as an app</p>
+        <div class="set-row">
+          <span><b>Reminders</b><span class="small muted" anvil:dom-node="rem_status">Off</span></span>
+          <button type="button" class="switch" role="switch" aria-label="Move reminders" anvil:name="rem_switch" anvil:on-dom:click="self.rem_click"><i></i></button>
+        </div>
+        <div class="rem-grid" anvil:name="rem_grid">
+          <label class="field"><span>From</span><anvil-component type="DropDown" name="start_box"></anvil-component></label>
+          <label class="field"><span>Until</span><anvil-component type="DropDown" name="end_box"></anvil-component></label>
+          <label class="field"><span>Every</span><anvil-component type="DropDown" name="every_box"></anvil-component></label>
+        </div>
+        <div class="set-row">
+          <span><b>Weekdays only</b></span>
+          <button type="button" class="switch" role="switch" aria-label="Weekdays only" anvil:name="weekdays_switch" anvil:on-dom:click="self.weekdays_click"><i></i></button>
+        </div>
+        <anvil-component type="Button" name="test_push_button" prop:text="Send me a test notification" prop:role='["btn", "small", "ic-bell"]'></anvil-component>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Badges</h2><span class="muted small" anvil:dom-node="badge_count">0/14</span></div>
+        <div class="badges">
+          <anvil-component type="RepeatingPanel" name="badges_panel" prop:item_template="PoundFighter.Items.BadgeTile" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+
+      <section class="panel settings">
+        <div class="panel-head"><h2>Settings</h2></div>
+        <div class="set-row">
+          <span><b>Voice reps</b><span class="small muted">Count a rep when the mic hears a sound well above the room's background noise.</span></span>
+          <button type="button" class="switch" role="switch" aria-label="Voice reps" anvil:name="mic_switch" anvil:on-dom:click="self.mic_click"><i></i></button>
+        </div>
+        <div class="set-row">
+          <span><b>Tune the mic</b><span class="small muted">See what it hears and test your rep noise.</span></span>
+          <anvil-component type="Button" name="tune_button" prop:text="Open" prop:role='["btn", "small"]'></anvil-component>
+        </div>
+        <label class="set-col">
+          <span><b>Sensitivity</b> <span class="small muted" anvil:dom-node="sens_label"></span></span>
+          <input type="range" min="6" max="30" step="1" aria-label="Sensitivity" anvil:dom-node="sens">
+          <span class="range-ends small muted"><span>Needs a shout</span><span>Hears a whisper</span></span>
+        </label>
+        <label class="set-col">
+          <span><b>Minimum time between reps</b> <span class="small muted" anvil:dom-node="gap_label"></span></span>
+          <input type="range" min="250" max="1500" step="50" aria-label="Minimum time between reps" anvil:dom-node="gap">
+        </label>
+        <div class="set-row">
+          <span><b>Sound effects</b></span>
+          <button type="button" class="switch" role="switch" aria-label="Sound effects" data-key="sound" anvil:name="sound_switch" anvil:on-dom:click="self.toggle_click"><i></i></button>
+        </div>
+        <div class="set-row">
+          <span><b>Music</b><span class="small muted">In fights it plays only when voice reps are off, so the mic never counts it.</span></span>
+          <button type="button" class="switch" role="switch" aria-label="Music" data-key="music" anvil:name="music_switch" anvil:on-dom:click="self.toggle_click"><i></i></button>
+        </div>
+        <div class="set-row">
+          <span><b>Vibration</b></span>
+          <button type="button" class="switch" role="switch" aria-label="Vibration" data-key="vibrate" anvil:name="vibrate_switch" anvil:on-dom:click="self.toggle_click"><i></i></button>
+        </div>
+        <div class="set-row">
+          <span><b>Submit feedback</b><span class="small muted">Report a bug or suggest an idea.</span></span>
+          <anvil-component type="Button" name="feedback_button" prop:text="Open" prop:role='["btn", "small"]'></anvil-component>
+        </div>
+        <div class="set-row" anvil:name="reset_row">
+          <span><b>Reset progress</b><span class="small muted">Wipes the progress saved on this device.</span></span>
+          <anvil-component type="Button" name="reset_button" prop:text="Reset" prop:role='["btn", "small", "danger"]'></anvil-component>
+        </div>
+      </section>
+      <p class="foot-links small muted" anvil:dom-node="version">PoundFighter</p>
+    </div>
+  </anvil-block>
+</anvil-form>

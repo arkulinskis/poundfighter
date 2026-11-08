@@ -1,0 +1,15 @@
+<div class="fb-item" anvil:dom-node="row">
+  <div class="fb-top">
+    <span class="kind-tag" anvil:dom-node="kind">other</span>
+    <span class="small muted" anvil:dom-node="when"></span>
+    <span class="small fb-email"><a anvil:name="email_link" href="mailto:"><span anvil:dom-node="email"></span></a><i class="muted" anvil:name="anon">anonymous</i></span>
+  </div>
+  <p class="fb-msg" anvil:dom-node="msg"></p>
+  <details anvil:name="ctx_box"><summary class="small">Device info</summary><pre anvil:dom-node="ctx"></pre></details>
+  <div class="fb-actions">
+    <anvil-component type="DropDown" name="status_box"></anvil-component>
+    <anvil-component type="TextBox" name="note_box" prop:placeholder="Private note"></anvil-component>
+    <anvil-component type="Button" name="save_button" prop:text="Save" prop:role='["btn", "small", "gold"]'></anvil-component>
+    <anvil-component type="Button" name="delete_button" prop:text="Delete" prop:role='["btn", "small", "danger", "btn-icon", "ic-trash"]' prop:tooltip="Delete"></anvil-component>
+  </div>
+</div>

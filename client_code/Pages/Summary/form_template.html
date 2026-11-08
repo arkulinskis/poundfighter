@@ -1,0 +1,45 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page summary">
+      <section class="sum-head">
+        <div class="logo small" aria-hidden="true">POUND<span class="gold-text">FIGHTER</span></div>
+        <h1 anvil:dom-node="title">Session ended</h1>
+        <p class="muted" anvil:dom-node="lead"></p>
+      </section>
+      <section class="stats">
+        <anvil-component type="RepeatingPanel" name="stats_panel" prop:item_template="PoundFighter.Items.StatTile" prop:role='["contents"]'></anvil-component>
+      </section>
+      <section class="panel levelup" anvil:name="levelup_box">
+        <div class="lvl-big" anvil:dom-node="new_level">2</div>
+        <div><h2>Level up!</h2><p>You are now a <b anvil:dom-node="new_rank">Desk Dabbler</b>.</p></div>
+      </section>
+      <section class="panel" anvil:name="captured_box">
+        <div class="panel-head"><h2>Captured</h2></div>
+        <div class="cards">
+          <anvil-component type="RepeatingPanel" name="captured_panel" prop:item_template="PoundFighter.Items.MonsterCard" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+      <section class="panel" anvil:name="rewards_box">
+        <div class="panel-head"><h2>Rewards</h2></div>
+        <div class="rewards" role="list">
+          <anvil-component type="RepeatingPanel" name="rewards_panel" prop:item_template="PoundFighter.Items.RewardRow" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><h2>Today's punch card</h2><span class="muted small" anvil:dom-node="punch_count">0/8</span></div>
+        <div class="punches">
+          <anvil-component type="RepeatingPanel" name="punch_panel" prop:item_template="PoundFighter.Items.PunchSlot" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+      <section class="panel gold-panel save-nudge" anvil:name="save_box">
+        <div class="acct-crest"><i class="ic ic-shield"></i></div>
+        <div><b>Don't lose your monsters</b><span class="small">Create a free account to save your progress.</span></div>
+        <anvil-component type="Button" name="save_button" prop:text="Save" prop:role='["btn", "small", "gold"]'></anvil-component>
+      </section>
+      <div class="row-btns sticky">
+        <a class="btn" href="#home">Home</a>
+        <anvil-component type="Button" name="again_button" prop:text="Fight again" prop:role='["btn", "primary"]'></anvil-component>
+      </div>
+    </div>
+  </anvil-block>
+</anvil-form>

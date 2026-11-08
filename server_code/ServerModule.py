@@ -5,6 +5,7 @@ calls from the game to the functions below.
 """
 import json
 import random
+from typing import Any
 from datetime import datetime, timedelta, timezone
 
 import anvil.server
@@ -53,7 +54,7 @@ def change_password(old_password, new_password):
     import bcrypt
   except ImportError:
     raise RuntimeError('ResetByEmail')
-  user = anvil.users.get_user()
+  user: Any = anvil.users.get_user()
   stored = user['password_hash'] or ''
   if not stored.startswith('$2'):
     raise RuntimeError('ResetByEmail')
@@ -136,14 +137,14 @@ def sync_progress(data=None):
 
   Call with data=None to just read the account copy.
   """
-  user = anvil.users.get_user()
+  user: Any = anvil.users.get_user()
   row = app_tables.progress.get(user=user)
   stored = row['data'] if row else None
   if data is None:
     return stored
   if not isinstance(data, dict) or len(json.dumps(data)) > MAX_PROGRESS_BYTES:
     raise ValueError('Progress data is invalid or too large')
-  merged = merge_progress(stored, data)
+  merged: Any = merge_progress(stored, data)
   merged['owner'] = user['email']
   if row:
     row.update(data=merged, updated=_now())
@@ -162,7 +163,7 @@ def submit_feedback(kind, message, email=None, context=None):
   count = anvil.server.session.get('fb_count', 0)
   if count >= FEEDBACK_PER_SESSION:
     raise ValueError('Thanks, that is plenty of feedback for now!')
-  anvil.server.session['fb_count'] = count + 1
+  getattr(anvil.server, 'session')['fb_count'] = count + 1
   user = anvil.users.get_user()
   ctx = context if isinstance(context, dict) else {}
   if len(json.dumps(ctx)) > 5000:
@@ -256,7 +257,7 @@ def push_subscribe(subscription, prefs=None, tz_offset=0):
     raise ValueError('Invalid subscription keys')
   user = anvil.users.get_user()
   row = app_tables.push_subscriptions.get(endpoint=subscription['endpoint'])
-  values = dict(keys=keys, prefs=_clean_prefs(prefs), tz_offset=int(tz_offset or 0), fails=0)
+  values: Any = dict(keys=keys, prefs=_clean_prefs(prefs), tz_offset=int(tz_offset or 0), fails=0)
   if user:
     values['user'] = user
   if row:
@@ -303,7 +304,7 @@ def push_test(endpoint):
   count = anvil.server.session.get('push_tests', 0)
   if count >= 5:
     raise ValueError('That is enough test notifications for now.')
-  anvil.server.session['push_tests'] = count + 1
+  getattr(anvil.server, 'session')['push_tests'] = count + 1
   status = push.send(row['endpoint'], row['keys'], {
     'title': 'PoundFighter reminders are on!',
     'body': 'This is what a nudge looks like. Brain off, glutes on.',

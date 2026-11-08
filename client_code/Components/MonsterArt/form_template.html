@@ -1,0 +1,19 @@
+---
+custom_component: true
+properties:
+  - name: monster_id
+    type: string
+    default_value: ""
+    description: The monster's id from data.js (e.g. "snoozle")
+    default_binding_prop: true
+  - name: look
+    type: string
+    default_value: "full"
+    description: "full (the portrait), sil (a dark silhouette: not caught yet) or mystery (a question mark: an uncaught Legendary)"
+toolbox_item:
+  title: MonsterArt
+  group: PoundFighter
+help_text: |
+  A monster's procedural SVG portrait, drawn by the game engine (monster-art.js).
+---
+<div class="m-art-host"><div class="m-art" anvil:dom-node="box" aria-hidden="true"></div></div>

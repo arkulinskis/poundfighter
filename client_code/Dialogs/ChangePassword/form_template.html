@@ -1,0 +1,21 @@
+<div class="dlg auth">
+  <div class="auth-head">
+    <div class="acct-crest"><i class="ic ic-key"></i></div>
+    <h2 class="dlg-title">Change password</h2>
+    <p class="muted small" anvil:dom-node="email"></p>
+  </div>
+  <label class="field"><span>Current password</span>
+    <anvil-component type="TextBox" name="old_box" prop:hide_text="true"></anvil-component>
+  </label>
+  <label class="field"><span>New password</span>
+    <anvil-component type="TextBox" name="new1_box" prop:hide_text="true"></anvil-component>
+  </label>
+  <label class="field"><span>New password again</span>
+    <anvil-component type="TextBox" name="new2_box" prop:hide_text="true"></anvil-component>
+  </label>
+  <anvil-component type="Label" name="message" prop:visible="false" prop:role='["msg-error"]'></anvil-component>
+  <div class="row-btns">
+    <anvil-component type="Button" name="cancel_button" prop:text="Cancel" prop:role='["btn"]'></anvil-component>
+    <anvil-component type="Button" name="save_button" prop:text="Save" prop:role='["btn", "gold"]'></anvil-component>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<anvil-form layout="PoundFighter.Layouts.Shell">
+  <anvil-block slot="content">
+    <div class="page home-page">
+      <section class="hero">
+        <div class="mascot shiny" role="img" aria-label="PoundFighter mascot"></div>
+        <h1 class="logo">POUND<span class="gold-text">FIGHTER</span></h1>
+        <p class="tag">Brain off, glutes on.</p>
+      </section>
+
+      <section class="panel install-card gold-panel" anvil:name="install_card">
+        <div class="acct-crest"><i class="ic ic-download"></i></div>
+        <div class="install-text"><b>Install PoundFighter</b><span class="small">Opens in one tap, and can remind you to move during the day.</span></div>
+        <anvil-component type="Button" name="install_button" prop:text="Install" prop:role='["btn", "small", "gold"]'></anvil-component>
+        <anvil-component type="Button" name="hide_install_button" prop:text="Hide" prop:role='["icon-btn", "small", "btn-icon", "ic-x"]' prop:tooltip="Hide"></anvil-component>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Where are you?</h2></div>
+        <div class="seg" role="group" aria-label="Session length">
+          <anvil-component type="RepeatingPanel" name="lengths_panel" prop:item_template="PoundFighter.Items.LengthSeg" prop:role='["contents"]'></anvil-component>
+        </div>
+        <div class="positions">
+          <anvil-component type="RepeatingPanel" name="positions_panel" prop:item_template="PoundFighter.Items.PositionButton" prop:role='["contents"]'></anvil-component>
+        </div>
+        <div class="mic-row">
+          <button type="button" class="switch" role="switch" aria-label="Voice reps" anvil:name="mic_switch" anvil:on-dom:click="self.mic_click"><i></i></button>
+          <div class="mic-text">
+            <b><i class="ic ic-mic" anvil:name="mic_icon"></i><span anvil:dom-node="mic_title">Voice reps on</span></b>
+            <span class="small muted" anvil:dom-node="mic_hint">Grunt, clap or say “HUP!” on each rep. Screen stays awake.</span>
+          </div>
+          <anvil-component type="Button" name="test_button" prop:text="Test" prop:role='["link"]'></anvil-component>
+        </div>
+        <div class="lure-armed" anvil:name="lure_box"><i class="ic ic-magnet"></i><span><b anvil:dom-node="lure_name">Rare Lure</b> armed for your next fight</span></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Today's punch card</h2><span class="muted small" anvil:dom-node="punch_count">0/8</span></div>
+        <p class="muted small">Fight in a new hour of the day to earn a punch. Chests at 4 and 8. Little and often beats one big workout.</p>
+        <div class="punches">
+          <anvil-component type="RepeatingPanel" name="punch_panel" prop:item_template="PoundFighter.Items.PunchSlot" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Daily quests</h2><span class="muted small">New ones tomorrow</span></div>
+        <div class="quests" role="list">
+          <anvil-component type="RepeatingPanel" name="quest_panel" prop:item_template="PoundFighter.Items.QuestRow" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+
+      <section class="panel" anvil:name="sightings_box">
+        <div class="panel-head"><h2>Wild sightings</h2><span class="muted small">Not yet captured</span></div>
+        <div class="sightings">
+          <anvil-component type="RepeatingPanel" name="sight_panel" prop:item_template="PoundFighter.Items.Sighting" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+
+      <section class="panel ytf" id="watch">
+        <div class="panel-head"><h2><svg viewBox="0 0 28 20" width="20" height="14" aria-hidden="true"><rect width="28" height="20" rx="5" fill="#FF0033"/><path d="M11.2 5.8v8.4l7.3-4.2z" fill="#fff"/></svg> Watch PoundFighter</h2><span class="muted small">1:12</span></div>
+        <p class="muted small">A short video tour of what PoundFighter does and how it works.</p>
+        <div class="ytf-frame" anvil:dom-node="yt_frame">
+          <button type="button" class="ytf-cover" anvil:dom-node="yt_cover" aria-label="Play the PoundFighter video (1:12)">
+            <img src="_/theme/app/yt-cover.jpg" alt="" loading="lazy" decoding="async" width="960" height="540">
+            <span class="ytf-play" aria-hidden="true"><svg viewBox="0 0 68 48" width="68" height="48"><path d="M66.5 7.7a8.5 8.5 0 0 0-6-6C55.3.3 34 .3 34 .3s-21.3 0-26.5 1.4a8.5 8.5 0 0 0-6 6C.1 13 .1 24 .1 24s0 11 1.4 16.3a8.5 8.5 0 0 0 6 6c5.2 1.4 26.5 1.4 26.5 1.4s21.3 0 26.5-1.4a8.5 8.5 0 0 0 6-6C67.9 35 67.9 24 67.9 24s0-11-1.4-16.3z" fill="#FF0033"/><path d="M45 24 27 14v20z" fill="#fff"/></svg></span>
+            <span class="ytf-len">1:12</span>
+          </button>
+        </div>
+        <p class="ytf-note">The video loads from YouTube when you press play. <a class="link" href="https://www.youtube.com/watch?v=X7OTOzRsGy8" target="_blank" rel="noopener">Watch on YouTube ↗</a></p>
+      </section>
+    </div>
+  </anvil-block>
+</anvil-form>

@@ -1,0 +1,36 @@
+---
+layout_metadata:
+  title: Game frame
+  description: Top bar (level, rank, streak, pounds), the page, the footer links and the tab bar (Fight, Collection, Shop, Me)
+---
+<div class="ui ui-shell pf-shell">
+  <header class="topbar" anvil:name="topbar">
+    <a class="lvl-block" href="#me" aria-label="Your profile">
+      <span class="lvl-badge shiny" anvil:dom-node="level">1</span>
+      <span class="lvl-text">
+        <span class="rank" anvil:dom-node="rank">Couch Potato</span>
+        <span class="xpbar"><i anvil:dom-node="xp"></i></span>
+      </span>
+    </a>
+    <div class="top-chips">
+      <span class="chip" title="Day streak" anvil:name="streak_chip"><i class="ic ic-flame"></i><span anvil:dom-node="streak">0</span><span class="ui-sr">day streak</span></span>
+      <span class="chip gold shiny" title="Pounds"><span class="coin"><i class="coin-ic" aria-hidden="true">£</i><span anvil:dom-node="pounds">0</span></span><span class="ui-sr">pounds</span></span>
+    </div>
+  </header>
+
+  <main class="ui-main">
+    <anvil-slot name="content"></anvil-slot>
+  </main>
+
+  <footer class="pf-footer" anvil:name="footer">
+    <p class="foot-links small">
+      <a href="https://prepsto.com/#f/32dqx5g" target="_blank" rel="noopener" data-prepsto-open>Submit feedback</a>
+      <button type="button" data-lk-open="overview">Privacy &amp; Terms</button>
+    </p>
+    <p class="foot-links small muted">Contact developer: <a href="https://arkvital.com" target="_blank" rel="noopener">arkvital.com</a> · Parent company: <a href="https://addanapp.com" target="_blank" rel="noopener">addanapp.com</a></p>
+  </footer>
+
+  <nav class="tabbar" aria-label="Main" anvil:name="tabbar">
+    <anvil-component type="RepeatingPanel" name="tab_panel" prop:item_template="PoundFighter.Items.NavTab" prop:role='["contents"]'></anvil-component>
+  </nav>
+</div>

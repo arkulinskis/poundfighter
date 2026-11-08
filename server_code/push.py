@@ -11,13 +11,18 @@ import struct
 import time
 from urllib.parse import urlparse
 
-import requests
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+# Packages from server_code/requirements.txt. Imported softly: if one is missing (the local App Server, a failed
+# package build), only reminders fail, not every server call (ServerModule imports this module).
+try:
+  import requests  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.backends import default_backend  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.primitives import hashes, serialization  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.primitives.asymmetric import ec  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.primitives.ciphers.aead import AESGCM  # ty: ignore[unresolved-import]
+  from cryptography.hazmat.primitives.kdf.hkdf import HKDF  # ty: ignore[unresolved-import]
+except ImportError as _e:  # pragma: no cover
+  print('push.py: Web Push unavailable:', _e)
 
 VAPID_SUBJECT = 'https://poundfighter.com'
 

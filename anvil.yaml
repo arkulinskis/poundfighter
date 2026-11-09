@@ -194,10 +194,9 @@ db_schema:
     server: full
     title: Users
 metadata:
-  description: 'Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing,
-    count them by voice, and capture 36 monsters.'
-  logo_img: asset:poundfighter.png
-  title: 'PoundFighter: micro workouts as a monster-collecting game'
+  description: "Micro workouts for your workday, turned into a monster-collecting game: do reps in bed, at your desk or standing, count them by voice, and capture 36 monsters."
+  logo_img: "asset:poundfighter.png"
+  title: "PoundFighter: micro workouts as a monster-collecting game"
 name: PoundFighter
 native_deps:
   head_html: |

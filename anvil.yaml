@@ -222,7 +222,7 @@ native_deps:
       window.addEventListener('load', keep);
     })();
     </script>
-    <script src="_/theme/legal-kit.js?v=8c8cb3c953"></script>
+    <script src="_/theme/legal-kit.js?v=176d2d14ac"></script>
     <!-- seo:start (APP_MAKER/seo: edit seo/apps/poundfighter.json and run seo.py, not here) -->
     <link rel="canonical" href="https://poundfighter.com/">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
@@ -272,7 +272,7 @@ native_deps:
     <link rel="stylesheet" href="_/theme/icons.css?v=78efe53179">
     <link rel="stylesheet" href="_/theme/app.css?v=b06d320c0d">
     <script src="_/theme/app-kit.js?v=63dadc8370"></script>
-    <script src="_/theme/app/js/ark-music.js?v=884c4f647c"></script>
+    <script src="_/theme/app/js/ark-music.js?v=39180862e8"></script>
     <script type="module" src="_/theme/app/js/pf.js?v=4862e20514"></script>
 package_name: PoundFighter
 runtime_options:

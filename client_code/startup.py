@@ -5,6 +5,9 @@ import anvil.server
 from anvil.js import window
 
 from . import legal, pf, reminders, router, state
+from . import session_guard
+
+session_guard.start()  # an expired server session reloads quietly instead of "Session expired, refresh now"
 
 LEGAL_THEME = {"accent": "#ff6b2c", "accentDark": "#ffc531"}  # the Privacy & Terms page in the game's colours
 

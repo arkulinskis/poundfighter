@@ -5,7 +5,8 @@ from ... import pf
 
 
 class Monster(MonsterTemplate):
-    """A monster's card, big: portrait (or silhouette), rarity, habitat, card tier, flavour text, catches."""
+    """A monster's card, big: portrait (or silhouette), rarity, habitat, card tier, flavour text, catches, and
+    Share card for monsters you have caught (a PNG through the share sheet, or a download + copied caption)."""
 
     def __init__(self, monster_id, **properties):
         super().__init__(**properties)
@@ -23,6 +24,15 @@ class Monster(MonsterTemplate):
         flavor.textContent = ("“%s”" % m["flavor"]) if m.get("flavor") else ""
         flavor.hidden = not m.get("flavor")
         self.dom_nodes["meta"].textContent = m.get("meta", "")
+        self._id = monster_id
+        caught = bool(m) and not m.get("locked")
+        self.share_button.visible = caught
+        if caught:
+            pf.engine().warmShare(monster_id)  # drawn ahead: the share sheet must open inside the tap
+
+    @handle("share_button", "click")
+    def share_button_click(self, **event_args):
+        pf.engine().shareCard(self._id)
 
     @handle("close_button", "click")
     def close_button_click(self, **event_args):

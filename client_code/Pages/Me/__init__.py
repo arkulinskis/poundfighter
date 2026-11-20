@@ -28,7 +28,8 @@ def _ago(ms):
 
 class Me(MeTemplate):
     """#me: level and rank, the account (sign in / create account, or email + sync status + change password + sign
-    out, and the Feedback inbox link for admins), lifetime stats, move reminders, badges and settings (voice reps,
+    out, and the Feedback inbox link for admins), lifetime stats, the last 3 weeks (streak calendar + Weekends off),
+    move reminders, badges and settings (voice reps,
     mic tuning, sensitivity, rep gap, sound, music, vibration, feedback, reset)."""
 
     def __init__(self, args=(), **properties):
@@ -61,6 +62,7 @@ class Me(MeTemplate):
         self.badges_panel.items = d["badges"]
         self.dom_nodes["badge_count"].textContent = "%d/%d" % (d["badgeCount"], d["badgeTotal"])
         self._draw_reminders(d)
+        self._draw_calendar(d)
         st = d["settings"]
         for sw, on in ((self.mic_switch, st["mic"]), (self.sound_switch, st["sound"]), (self.music_switch, st["music"]),
                        (self.vibrate_switch, st["vibrate"])):
@@ -71,6 +73,20 @@ class Me(MeTemplate):
         self.dom_nodes["gap_label"].textContent = st["gapLabel"]
         self.reset_row.visible = not me
         self.dom_nodes["version"].textContent = "PoundFighter v" + d["version"]
+
+    def _draw_calendar(self, d):
+        self.cal_panel.items = d["calendar"]
+        n = int(d["foughtDays"])
+        self.dom_nodes["cal_count"].textContent = "%d day%s fought" % (n, "" if n == 1 else "s")
+        self.dom_nodes["cal_streak"].textContent = str(d["streak"]["count"])
+        self.dom_nodes["cal_best"].textContent = str(d["bestStreak"])
+        self.dom_nodes["cal_shields"].textContent = "%d/%d" % (d["streak"]["shields"], d["streak"]["maxShields"])
+        self._switch(self.weekends_switch, d["weekendsOff"])
+
+    def weekends_click(self, event):
+        pf.act("weekendsOff")
+        self.redraw()
+        router.refresh_bar()
 
     def _switch(self, sw, on):
         sw.classes["on"] = bool(on)

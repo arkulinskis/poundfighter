@@ -1,4 +1,5 @@
 from anvil import *
+import anvil.js
 
 from ._anvil_designer import ShellTemplate
 from ... import pf, router
@@ -34,3 +35,6 @@ class Shell(ShellTemplate):
         self.dom_nodes["streak"].textContent = str(c["streak"])
         self.dom_nodes["pounds"].textContent = "{:,}".format(int(c["pounds"]))
         self.streak_chip.classes["hot"] = c["streak"] > 0
+        self.streak_chip.classes["risk"] = bool(c.get("risk"))
+        chip = anvil.js.get_dom_node(self.streak_chip)
+        chip.setAttribute("title", c.get("streakTitle") or "Day streak")

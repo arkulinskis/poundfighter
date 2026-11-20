@@ -34,6 +34,9 @@ class Summary(SummaryTemplate):
             self.dom_nodes["new_rank"].textContent = lv["rank"]
         self.captured_box.visible = bool(d["captured"])
         self.captured_panel.items = d["captured"]
+        self.share_button.visible = bool(d.get("share"))
+        if d.get("share"):
+            pf.engine().warmShare(d["share"])  # draw the card now: the share sheet must open inside the tap
         self.rewards_box.visible = bool(d["rewards"])
         self.rewards_panel.items = d["rewards"]
         self.punch_panel.items = d["punches"]
@@ -45,6 +48,11 @@ class Summary(SummaryTemplate):
         from ...Dialogs.Auth import Auth
         if alert(Auth(mode="signup"), buttons=[], role="app-dialog", dismissible=True):
             self.save_box.visible = not state.me()
+
+    @handle("share_button", "click")
+    def share_button_click(self, **event_args):
+        """Straight to the engine, no server call first (the share sheet needs the tap's permission)."""
+        pf.engine().shareCard((self._data or {}).get("share") or "")
 
     @handle("again_button", "click")
     def again_button_click(self, **event_args):

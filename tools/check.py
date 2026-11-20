@@ -88,6 +88,8 @@ def main():
         if r.returncode:
             errs.append("app/js/" + m.name + ": " + r.stderr.strip()[:400])
     step("JavaScript parses (%d files + %d engine modules)" % (len(js), len(mods)), not errs, "\n".join(errs))
+    r = run(["node", str(ROOT / "tools" / "ui" / "streak_test.mjs")])  # workday streak + shields, faked dates
+    step("streak rules (tools/ui/streak_test.mjs)", r.returncode == 0 and "STREAK TESTS PASSED" in r.stdout, (r.stdout + r.stderr)[-2000:])
     r = run([sys.executable, str(ROOT / "tools" / "assets.py")])
     step("asset hashes", r.returncode == 0, r.stdout + r.stderr)
     if "updated" in r.stdout:

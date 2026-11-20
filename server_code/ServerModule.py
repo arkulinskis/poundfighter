@@ -117,7 +117,7 @@ def merge_progress(stored, incoming):
     out[k] = _max_num(a.get(k), b.get(k)) or 0
   for k in ('totals', 'caught', 'lureBought', 'lureUsed'):
     out[k] = _merge_max_dict(a.get(k), b.get(k))
-  for k in ('firstCaught', 'badges'):
+  for k in ('firstCaught', 'badges', 'shieldDays'):
     merged = dict(a.get(k) or {})
     for key, day in (b.get(k) or {}).items():
       merged[key] = min(merged[key], day) if key in merged else day
@@ -315,6 +315,55 @@ def push_test(endpoint):
   return True
 
 
+# ---------------------------------------------------------------- workday streak (mirrors store.js)
+
+def _num(x):
+  return x if isinstance(x, (int, float)) and not isinstance(x, bool) else 0
+
+
+def _rest_day(data, day):
+  """Weekends never break the streak unless the player switched "Weekends off" off in Me."""
+  weekends_off = ((data.get('settings') or {}).get('weekendsOff', True)) is not False
+  return weekends_off and day.weekday() >= 5
+
+
+def _shields_held(data):
+  t = data.get('totals') or {}
+  used = max(_num(t.get('shieldsUsed')), len(data.get('shieldDays') or {}))
+  return max(0, _num(t.get('shieldsEarned')) + _num(t.get('shieldsBought')) - used)
+
+
+def _streak_needs_today(data, local_date):
+  """The streak count that one fight today would keep alive, or 0.
+
+  0 when there is no streak, the player already fought today, today is a rest day, or the streak has already
+  broken (more missed workdays since the last fight than Streak Shields to cover them). Same rule as streakState()
+  in theme/assets/app/js/store.js.
+  """
+  data = data if isinstance(data, dict) else {}
+  st = data.get('streak') or {}
+  count = _num(st.get('count'))
+  last = st.get('last')
+  if count < 1 or not isinstance(last, str):
+    return 0
+  try:
+    last_day = datetime.strptime(last, '%Y-%m-%d').date()
+  except ValueError:
+    return 0
+  if last_day >= local_date or _rest_day(data, local_date):
+    return 0
+  covered = data.get('shieldDays') or {}
+  missed = 0
+  day = last_day + timedelta(days=1)
+  while day < local_date:
+    if (local_date - last_day).days > 400:
+      return 0
+    if not _rest_day(data, day) and day.strftime('%Y-%m-%d') not in covered:
+      missed += 1
+    day += timedelta(days=1)
+  return int(count) if missed <= _shields_held(data) else 0
+
+
 MONSTER_NAMES = [
   'Snooze Goblin', 'Pillow Imp', 'Sock Mimic', 'Lint Bunny', 'Desk Slug', 'Stapler Crab', 'Cable Snake',
   'Coffee Drip', 'Inbox Blob', 'Couch Potato', 'Remote Gremlin', 'Crumb Mite', 'Dust Bunny', 'Snack Goblin',
@@ -334,10 +383,9 @@ def _reminder_message(row, local_now):
   if user:
     prog = app_tables.progress.get(user=user)
     data = prog['data'] if prog else None
-    today = local_now.strftime('%Y-%m-%d')
-    streak = (data or {}).get('streak') or {}
-    if streak.get('count', 0) >= 2 and streak.get('last') != today:
-      body = 'Your %d-day streak needs one fight today.' % streak['count']
+    count = _streak_needs_today(data or {}, local_now.date())
+    if count >= 2:  # never for a streak that has already broken, or on a rest day
+      body = 'Your %d-day streak needs one fight today.' % count
   return {'title': 'A wild %s appeared!' % name, 'body': body, 'url': '/', 'tag': 'pf-reminder'}
 
 

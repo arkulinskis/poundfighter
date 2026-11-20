@@ -12,6 +12,17 @@
         </div>
       </section>
       <section class="panel">
+        <div class="panel-head"><h2>Streak Shields</h2><span class="muted small">Weekends never break a streak</span></div>
+        <div class="shop-item shield-item">
+          <div class="shop-icon"><i class="ic ic-shield"></i></div>
+          <div class="shop-text"><b>Streak Shield</b><span class="small muted">Covers one missed workday so your streak lives on. You also earn one every 5th streak day.</span>
+            <span class="small" anvil:dom-node="shield_owned"></span><span class="small shield-note" anvil:dom-node="shield_note"></span></div>
+          <div class="shop-actions">
+            <button type="button" class="btn small" anvil:name="shield_buy" anvil:on-dom:click="self.shield_buy_click"><span class="coin"><i class="coin-ic" aria-hidden="true">£</i><span anvil:dom-node="shield_price">150</span></span></button>
+          </div>
+        </div>
+      </section>
+      <section class="panel">
         <div class="panel-head"><h2>Arenas</h2><span class="muted small">Where your fights happen</span></div>
         <div class="arenas">
           <anvil-component type="RepeatingPanel" name="arenas_panel" prop:item_template="PoundFighter.Items.ArenaTile" prop:role='["contents"]'></anvil-component>

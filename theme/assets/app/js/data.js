@@ -4,7 +4,17 @@ export const POSITIONS = {
   bed: { id: 'bed', label: "I'm in bed", short: 'Bed', habitat: 'bedroom' },
   sitting: { id: 'sitting', label: "I'm at my desk", short: 'Desk', habitat: 'office' },
   standing: { id: 'standing', label: "I'm standing", short: 'Standing', habitat: 'lounge' },
+  // Meeting mode: invisible moves, no sound, music, vibration or mic; catches go to the Office habitat
+  meeting: { id: 'meeting', label: "I'm in a meeting", short: 'Meeting', habitat: 'office', silent: true },
 };
+
+// Where a catch happened, for the share card ("Caught with 12 Squats at my desk")
+export const PLACES = { bed: 'in bed', sitting: 'at my desk', standing: 'on my feet', meeting: 'in a meeting' };
+export const HABITAT_POSITION = { bedroom: 'bed', office: 'sitting', lounge: 'standing' };
+
+// Workday streak: weekends never break it (Me → "Weekends off"), Streak Shields cover a missed workday.
+// Every 5th streak day earns a shield while you hold fewer than 2; the shop sells them up to 3 held.
+export const STREAK = { shieldEvery: 5, maxEarned: 2, maxHeld: 3, price: 150 };
 
 export const HABITATS = {
   bedroom: { id: 'bedroom', name: 'Bedroom', blurb: 'Lurks under duvets. Feeds on snooze buttons.', where: 'Fight in bed to find them.' },
@@ -57,6 +67,19 @@ export const EXERCISES = {
     { id: 'quiet-jacks', name: 'Quiet Jacks', type: 'reps', target: 20, desc: 'Step one foot out while raising your arms, step back in. Jumping jacks, neighbour-friendly.', cue: 'Clap overhead' },
     { id: 'wall-sit', name: 'Wall Sit', type: 'hold', target: 30, desc: 'Back flat against a wall, slide down until your knees bend. Hold.', cue: 'Just hold. The monster melts.' },
     { id: 'statue', name: 'Flamingo Balance', type: 'hold', target: 20, desc: 'Stand on one leg, arms out. Switch legs halfway through.', cue: 'Just hold. Be the flamingo.' },
+  ],
+  // Meeting mode: moves nobody can see, mostly holds (they melt the monster on their own); reps are silent taps
+  meeting: [
+    { id: 'meet-glute', name: 'Secret Glute Squeeze', type: 'reps', target: 15, desc: 'Squeeze your glutes hard for a second, then let go. Your face stays in the meeting.', cue: 'Tap once per squeeze. Not a sound.' },
+    { id: 'meet-ab-brace', name: 'Ab Brace', type: 'hold', target: 20, desc: 'Tighten your stomach as if someone might poke it. Keep breathing normally.', cue: 'Just hold. Keep nodding.' },
+    { id: 'meet-calf', name: 'Under-desk Calf Raises', type: 'reps', target: 20, desc: 'Feet flat under the desk, lift both heels as high as they go, lower slowly.', cue: 'Tap once per raise.' },
+    { id: 'meet-toe', name: 'Toe Raises', type: 'reps', target: 20, desc: 'Heels down, lift the front of both feet off the floor, lower them again.', cue: 'Tap once per raise.' },
+    { id: 'meet-knee', name: 'Knee Squeeze', type: 'hold', target: 20, desc: 'Press your knees together as hard as you can, as if holding a ball between them.', cue: 'Just hold. Look thoughtful.' },
+    { id: 'meet-desk-press', name: 'Desk Press', type: 'hold', target: 15, desc: 'Palms flat on the desk, press down firmly without moving. Shoulders stay relaxed.', cue: 'Just hold. Nobody notices.' },
+    { id: 'meet-blade', name: 'Shoulder Blade Squeeze', type: 'hold', target: 20, desc: 'Pinch your shoulder blades together and down, chest proud, as if someone just said your name.', cue: 'Just hold. Sit tall.' },
+    { id: 'meet-posture', name: 'Posture Lock', type: 'hold', target: 25, desc: 'Sit tall, chin tucked, shoulders back and down, abs braced. Be the most engaged person on the call.', cue: 'Just hold. Be a statue.' },
+    { id: 'meet-hover', name: 'Hover Feet', type: 'hold', target: 15, desc: 'Lift both feet a few centimetres off the floor under the desk and hold them there.', cue: 'Just hold. Under the desk.' },
+    { id: 'meet-quad', name: 'Quad Set', type: 'hold', target: 20, desc: 'Tighten the muscles on the front of both thighs so your knees straighten a little. Hold.', cue: 'Just hold. Invisible effort.' },
   ],
 };
 
@@ -156,6 +179,8 @@ export const BADGES = [
   { id: 'early', name: 'Early Bird', desc: 'Fight before 8am.' },
   { id: 'owl', name: 'Night Owl', desc: 'Fight after 10pm.' },
   { id: 'gold-card', name: 'Gold Standard', desc: 'Get any monster card to Gold (15 catches).' },
+  { id: 'ninja', name: 'Silent Partner', desc: 'Finish 10 sessions in meeting mode.' },
+  { id: 'show-off', name: 'Show-Off', desc: 'Share a monster card.' },
 ];
 
 export const LURES = [

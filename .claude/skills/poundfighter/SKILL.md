@@ -87,6 +87,24 @@ Fixed / Won't fix, admin_note), `push_subscriptions`, `app_settings`.
   from Python with `state.call(...)` (not from the engine).
 - **New page:** template-forms recipe; add the address to tools/ui/smoke.js.
 
+## Streak, Meeting mode, Share card (2026-11-20)
+
+- **Workday streak** (store.js `streakState` / `touchStreak` / `missedWorkdays` / `shieldsHeld`, every one takes
+  `now`): count = fight days in the chain; rest days (weekends while `settings.weekendsOff`, default true) never break
+  it; a missed workday is covered by a Streak Shield, used lazily by the next fight (too few shields = restart, shields
+  kept). Shield counters live in `totals` (shieldsEarned / shieldsBought / shieldsUsed, merged by max) plus
+  `shieldDays` (union in both mergers). `STREAK` in data.js. Old saves are recounted once from `days` by
+  `migrateStreak` (`streakV: 2`, never lowers a count). Server mirror: `_streak_needs_today` in ServerModule.py (used
+  by `_reminder_message`): keep both rules identical. Tests: `node tools/ui/streak_test.mjs` (run by check.py).
+- **Meeting mode** = `POSITIONS.meeting` (`silent: true`, Office habitat) + `EXERCISES.meeting`. pf.js: `session.silent`
+  forces the mic off, `hushed()` mutes sfx/vibration (applySettings) and music (syncMusic) during the session, on its
+  Summary and for 30 min after (`hushUntil` in device storage; a normal fight or a sound/music switch ends it).
+  Disguise = `disguiseMarkup` / `updateDisguise` / `setDisguise` (z-index above the overlays; `data-tap` grid).
+- **Share card** = `shareInfo` / `drawCard` (canvas, monster SVG as a data-URL image) / `prepareShare` (cached File) /
+  `shareCard`. `navigator.share` needs the tap's user activation: Python calls `PF.warmShare(id)` when the Summary or
+  Monster dialog opens and `PF.shareCard(id)` straight from the click, never after a server call. `S.catchLog` keeps
+  how each monster was last caught (device copy wins in both mergers).
+
 ## Gotchas
 
 - push.py imports cryptography etc. inside try/except so a missing package only breaks reminders (the local App

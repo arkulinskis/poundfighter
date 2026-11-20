@@ -14,7 +14,8 @@
         <div><h2>Level up!</h2><p>You are now a <b anvil:dom-node="new_rank">Desk Dabbler</b>.</p></div>
       </section>
       <section class="panel" anvil:name="captured_box">
-        <div class="panel-head"><h2>Captured</h2></div>
+        <div class="panel-head"><h2>Captured</h2>
+          <anvil-component type="Button" name="share_button" prop:text="Share" prop:role='["btn", "small", "gold", "ic-share"]' prop:tooltip="Share your best catch as a card"></anvil-component></div>
         <div class="cards">
           <anvil-component type="RepeatingPanel" name="captured_panel" prop:item_template="PoundFighter.Items.MonsterCard" prop:role='["contents"]'></anvil-component>
         </div>

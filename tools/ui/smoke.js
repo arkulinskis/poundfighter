@@ -112,7 +112,7 @@
   try {
     // ---- a guest
     await open('#home', /Where are you/);
-    if (qa('.positions .pos-btn').length !== 3) bad.push('#home: expected 3 places to fight');
+    if (qa('.positions .pos-btn').length !== 4) bad.push('#home: expected 4 places to fight (incl. meeting mode)');
     if (!q('.footer, .pf-footer') || !/Submit feedback/.test(q('.pf-footer').innerText) || !/arkvital\.com/.test(q('.pf-footer').innerText)) bad.push('footer links missing');
     await open('#collection', /monsters captured/);
     await open('#collection/office', /Office/);

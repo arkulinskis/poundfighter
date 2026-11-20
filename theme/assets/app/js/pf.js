@@ -42,12 +42,23 @@ const detector = new RepDetector({
   onLevel: (snap) => updateMeters(snap),
 });
 
+// Meeting mode keeps the app silent (no sounds, vibration or music) during a silent session and for half an hour
+// after it, so tapping Home after a meeting fight doesn't start the music. A normal fight, or switching sound or
+// music in Me, ends the hush. Kept on this device only.
+const HUSH_MS = 30 * 60000;
+let hushUntil = Number(store.deviceGet().hushUntil) || 0;
+const hushed = () => !!(session && session.silent) || Date.now() < hushUntil;
+function setHush(on) {
+  hushUntil = on ? Date.now() + HUSH_MS : 0;
+  store.deviceSet({ hushUntil });
+}
+
 function applySettings() {
   detector.sensitivity = S.settings.sensitivity;
   detector.minGap = S.settings.minGap;
   configureSfx({
-    sound: S.settings.sound,
-    vibrate: S.settings.vibrate,
+    sound: S.settings.sound && !hushed(),
+    vibrate: S.settings.vibrate && !hushed(),
     onPlaySound: (ms) => detector.suppress(ms), // don't let our own sounds count as reps
   });
   syncMusic();
@@ -55,14 +66,15 @@ function applySettings() {
 
 // ---------- Music: real tracks streamed by ArkMusic (ark-music.js, from APP_MAKER/media) ----------
 // Never while the mic counts reps or is being tuned: it would hear the music and count it as reps.
+// Never in meeting mode either (a silent session, its results, and the hush after it).
 const MUSIC = { menu: ['cosmic', 'dont-stress-out'], fight: ['how-do-you-love'], summary: ['nailed-it', 'cosmic'] };
 function syncMusic() {
   const M = window.ArkMusic;
   if (!M) return;
   M.enabled(S.settings.music !== false);
-  if (micTest || route === 'admin') return M.stop(0.3);
+  if (micTest || route === 'admin' || hushed()) return M.stop(0.3);
   if (route === 'fight') return session && session.mic ? M.stop(0.3) : M.play(MUSIC.fight, { volume: 0.5 });
-  if (route === 'summary') return M.play(MUSIC.summary, { volume: 0.45 });
+  if (route === 'summary') return lastSummary && lastSummary.silent ? M.stop(0.3) : M.play(MUSIC.summary, { volume: 0.45 });
   M.play(MUSIC.menu, { volume: 0.4, shuffle: true });
 }
 applySettings();
@@ -106,7 +118,77 @@ window.addEventListener('pagehide', saveLocal);
 
 function chrome() {
   const lv = store.levelInfo(S.xp);
-  return { level: lv.level, rank: lv.rank, pct: lv.pct, streak: store.currentStreak(S), pounds: store.pounds(S) };
+  const st = store.streakState(S);
+  // risk: a live streak that still needs today's fight (a workday you haven't fought yet)
+  const risk = st.alive && !st.today && !st.rest;
+  return { level: lv.level, rank: lv.rank, pct: lv.pct, streak: st.count, risk, pounds: store.pounds(S),
+    streakTitle: !st.count ? 'Day streak' : st.today ? `${st.count}-day streak: safe for today` : risk ? `${st.count}-day streak: fight today to keep it` : `${st.count}-day streak: safe (rest day)` };
+}
+
+// ---------- Streak strip (Home) and the 3-week calendar (Me) ----------
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayName = (key) => DAY_NAMES[store.parseDay(key).getDay()];
+const joinAnd = (list) => (list.length < 2 ? list.join('') : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many || one + 's'}`;
+const fought = (key) => store.foughtDay(S.days[key]) || key === S.streak.last;
+const mondayOf = (d) => store.addDays(d, -((d.getDay() + 6) % 7));
+
+function streakView(now = new Date()) {
+  const st = store.streakState(S, now);
+  const today = store.dayKey(now);
+  const tomorrowRest = store.isRestDay(S, store.addDays(now, 1));
+  const n = st.count;
+  let title, sub;
+  if (st.alive) {
+    title = `${n}-day streak`;
+    if (st.today) sub = tomorrowRest ? `Safe for today. Weekend next: back Monday for ${n + 1}.` : `Safe for today. Come back tomorrow for ${n + 1}.`;
+    else if (st.rest) sub = `Weekend: your streak is safe. A fight still makes it ${n + 1}.`;
+    else if (st.needed.length) sub = `Fight today to make it ${n + 1}. ${st.needed.length > 1 ? `${st.needed.length} Streak Shields cover` : 'A Streak Shield covers'} ${joinAnd(st.needed.map(dayName))}.`;
+    else sub = `Fight today to make it ${n + 1}.`;
+  } else if (st.lost >= 2 && st.repair > 0) {
+    title = 'Streak on the line';
+    sub = `Your ${st.lost}-day streak can still be saved: ${plural(st.repair, 'more Streak Shield')} from the Shop covers ${joinAnd(st.needed.map(dayName))}.`;
+  } else if (st.lost >= 2) {
+    title = 'New streak today';
+    sub = `Your last streak reached ${st.lost} days. One fight starts the next one.`;
+  } else {
+    title = 'Start a streak';
+    sub = store.weekendsOff(S) ? 'Fight once a workday. Weekends never break it.' : 'Fight once a day to build a streak.';
+  }
+  const monday = mondayOf(now);
+  const week = Array.from({ length: 7 }, (_, i) => {
+    const d = store.addDays(monday, i);
+    const k = store.dayKey(d);
+    const on = fought(k);
+    const shield = !!S.shieldDays[k];
+    const rest = store.isRestDay(S, d);
+    const future = k > today;
+    return { key: k, label: 'MTWTFSS'[i], on, shield, rest, today: k === today, future,
+      title: `${DAY_NAMES[d.getDay()]}: ${on ? 'fought' : shield ? 'covered by a Streak Shield' : future ? 'still to come' : k === today ? 'not yet' : rest ? 'rest day' : 'no fight'}` };
+  });
+  return { count: n, alive: st.alive, today: st.today, rest: st.rest, shields: st.shields, maxShields: D.STREAK.maxHeld,
+    needed: st.needed.length, repair: st.repair, title, sub, week };
+}
+
+function calendarView(now = new Date()) {
+  const today = store.dayKey(now);
+  const start = store.addDays(mondayOf(now), -14);
+  return Array.from({ length: 21 }, (_, i) => {
+    const d = store.addDays(start, i);
+    const k = store.dayKey(d);
+    const rec = S.days[k];
+    const on = fought(k);
+    const punches = rec ? (rec.punches || []).length : 0;
+    const lv = !on ? 0 : punches >= 6 ? 4 : punches >= 4 ? 3 : punches >= 2 ? 2 : 1;
+    const shield = !!S.shieldDays[k];
+    const future = k > today;
+    const label = `${DAY_NAMES[d.getDay()].slice(0, 3)} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    const what = on ? (punches ? plural(punches, 'punch', 'punches') : 'fought') : shield ? 'covered by a Streak Shield' : future ? 'still to come'
+      : store.isRestDay(S, d) ? 'rest day' : k === today ? 'no fight yet' : 'no fight';
+    return { key: k, day: d.getDate(), lv, on, shield, rest: store.isRestDay(S, d), today: k === today, future, title: `${label}: ${what}` };
+  });
 }
 
 function punchSlots(day) {
@@ -131,8 +213,11 @@ function home() {
     lengths: D.SESSION_LENGTHS.map((l) => ({ id: l.id, name: l.name, sub: `${l.fights} fight${l.fights > 1 ? 's' : ''} · ${l.hint}`, on: len === l.id })),
     positions: Object.values(D.POSITIONS).map((p) => {
       const prog = store.habitatProgress(S, p.habitat);
-      return { id: p.id, label: p.label, icon: { bed: 'bed', sitting: 'desk', standing: 'stand' }[p.id], sub: `${D.HABITATS[p.habitat].name} · ${prog.got}/${prog.total} caught` };
+      return { id: p.id, label: p.label, icon: { bed: 'bed', sitting: 'desk', standing: 'stand', meeting: 'eyeoff' }[p.id], silent: !!p.silent,
+        go: p.silent ? 'SHH' : 'FIGHT',
+        sub: p.silent ? `${D.HABITATS[p.habitat].name} · silent, nobody notices` : `${D.HABITATS[p.habitat].name} · ${prog.got}/${prog.total} caught` };
     }),
+    streak: streakView(),
     micOn: !!(S.settings.mic && detector.supported),
     lure: lure ? lure.name : '',
     punches: punchSlots(day),
@@ -195,6 +280,14 @@ function shop() {
       const using = S.arena === a.id;
       return { id: a.id, name: a.name, on: using, owned, price: a.price, state: using ? 'Using' : owned ? 'Use' : `£${fmtNum(a.price)}` };
     }),
+    shield: (() => {
+      const held = store.shieldsHeld(S);
+      const st = store.streakState(S);
+      const full = held >= D.STREAK.maxHeld;
+      return { price: D.STREAK.price, held, max: D.STREAK.maxHeld, full, afford: have >= D.STREAK.price && !full,
+        owned: held ? `You hold ${held} of ${D.STREAK.maxHeld}` : '',
+        note: st.repair ? `Your ${st.lost}-day streak can be saved with ${plural(st.repair, 'more shield')}.` : full ? 'You carry the most you can.' : '' };
+    })(),
   };
 }
 
@@ -202,6 +295,7 @@ function me() {
   const lv = store.levelInfo(S.xp);
   const t = S.totals;
   const st = S.settings;
+  const cal = calendarView();
   return {
     level: lv.level, rank: lv.rank, pct: lv.pct, xpText: `${fmtNum(lv.into)} / ${fmtNum(lv.need)} XP to level ${lv.level + 1}`,
     stats: [['Reps', fmtNum(t.reps)], ['By voice', fmtNum(t.micReps)], ['Time', fmtTime(t.seconds)],
@@ -214,6 +308,11 @@ function me() {
     scheduleText: scheduleText(),
     micSupported: detector.supported,
     version: APP_VERSION,
+    weekendsOff: store.weekendsOff(S),
+    calendar: cal,
+    streak: streakView(),
+    bestStreak: Math.max(t.bestStreak || 0, S.streak.count || 0),
+    foughtDays: cal.filter((c) => c.on).length,
   };
 }
 
@@ -223,11 +322,29 @@ function summary() {
   const sum = s.summary;
   const day = store.getDay(S);
   const n = s.captured.length;
+  const caught = `${n} monster${n > 1 ? 's' : ''} captured.`;
+  // The streak news from this session's first fight of the day (touchStreak's result)
+  const sr = sum.streak;
+  const streakRows = [];
+  if (sr) {
+    if (sr.shieldsUsed.length) {
+      streakRows.push({ icon: 'shield', text: `${sr.shieldsUsed.length > 1 ? `${sr.shieldsUsed.length} Streak Shields used` : 'Streak Shield used'}: ${joinAnd(sr.shieldsUsed.map(dayName))} covered`, pounds: 0 });
+    }
+    streakRows.push({ icon: 'flame', pounds: 0,
+      text: sr.broken && sr.was >= 2 ? `Day 1 of a new streak (the last one reached ${sr.was} days)` : sr.count === 1 ? 'Day 1 of your streak. Fight next workday for 2.' : `${sr.count}-day streak!` });
+    if (sr.shieldEarned) streakRows.push({ icon: 'shield', text: `+1 Streak Shield (every ${D.STREAK.shieldEvery}th streak day)`, pounds: 0 });
+  }
+  // The catch worth sharing: a new monster first, then the rarest, then the latest
+  const rank = (c) => (c.isNew ? 10 : 0) + D.RARITY_ORDER.indexOf(D.MONSTER_BY_ID[c.id].rarity);
+  const best = s.captured.reduce((b, c) => (!b || rank(c) >= rank(b) ? c : b), null);
   return {
     pos: s.pos,
-    title: n ? 'Victory!' : s.reps ? 'Good effort' : 'Session ended',
+    silent: !!s.silent,
+    share: best ? best.id : '',
+    title: n ? (s.silent ? 'Silent victory' : 'Victory!') : s.reps ? 'Good effort' : 'Session ended',
     win: n > 0,
-    lead: n ? `${n} monster${n > 1 ? 's' : ''} captured. Your glutes thank you.` : 'Every rep counts. Come back in an hour for another punch.',
+    lead: s.silent ? (n ? `Nobody noticed. ${caught}` : 'Nobody noticed. Every rep still counts.')
+      : n ? `${caught} Your glutes thank you.` : 'Every rep counts. Come back in an hour for another punch.',
     stats: [['Reps', String(s.reps)], ['Time', fmtTime(sum.secs)], ['Best combo', `×${s.maxCombo}`],
       ['Earned', `£${fmtNum(sum.pounds)}`], ['XP', `+${sum.xp}`], ['By voice', String(s.micReps)]].map(([label, value]) => ({ label, value })),
     levelUp: sum.levelUp ? { level: sum.levelUp.level, rank: sum.levelUp.rank } : null,
@@ -236,6 +353,7 @@ function summary() {
       return cardOf(m, { isNew: !!c.isNew, rar: `${rarityName(m.rarity)}${c.tierUp ? ` · ${c.tierUp}!` : ''}` });
     }),
     rewards: [
+      ...streakRows,
       ...sum.quests.map((q) => ({ icon: 'check', text: `Quest done: ${q.text}`, pounds: q.reward })),
       ...sum.chests.map((c) => ({ icon: 'gift', text: `${c.name} opened${c.lure ? ' + Epic Lure' : ''}`, pounds: c.pounds })),
       ...sum.badges.map((b) => ({ icon: 'medal', text: `Badge: ${b.name}. ${b.desc}`, pounds: 0 })),
@@ -259,6 +377,7 @@ const ACTIONS = {
   toggle: (key) => {
     if (!['sound', 'music', 'vibrate'].includes(key)) return { ok: false, msg: 'Unknown setting' };
     S.settings[key] = key === 'music' ? S.settings.music === false : !S.settings[key];
+    if (hushUntil) setHush(false); // touching a sound switch ends the quiet time after a meeting
     applySettings();
     persist();
     return { ok: true };
@@ -276,6 +395,27 @@ const ACTIONS = {
     return { ok: true, msg: `${l.name} bought${S.armedLure === l.id ? ' and armed' : ''}!` };
   },
   armLure: (id) => { S.armedLure = S.armedLure === id ? null : id; persist(); return { ok: true }; },
+  // Streak Shields are bought with pounds (the game's own coins), never real money
+  buyShield: () => {
+    const held = store.shieldsHeld(S);
+    if (held >= D.STREAK.maxHeld) return { ok: false, msg: `You already hold ${D.STREAK.maxHeld} Streak Shields, the most you can carry.` };
+    const before = store.streakState(S);
+    if (!store.spend(S, D.STREAK.price)) return { ok: false, msg: `You need £${fmtNum(D.STREAK.price - store.pounds(S))} more for a Streak Shield. Go pound some reps!` };
+    S.totals.shieldsBought = (S.totals.shieldsBought || 0) + 1;
+    persist();
+    sfx.coin();
+    const after = store.streakState(S);
+    if (!before.alive && after.alive) return { ok: true, msg: `Streak saved! Fight today to keep your ${after.count}-day streak.` };
+    return { ok: true, msg: `Streak Shield bought. You hold ${after.shields}.` };
+  },
+  weekendsOff: () => {
+    const before = store.currentStreak(S);
+    S.settings.weekendsOff = S.settings.weekendsOff === false;
+    persist();
+    const after = store.currentStreak(S);
+    if (after < before) return { ok: true, on: S.settings.weekendsOff, msg: `Weekends now count, so your ${before}-day streak has a gap. Switch back to keep it.` };
+    return { ok: true, on: S.settings.weekendsOff };
+  },
   arena: (id) => {
     const a = D.ARENAS.find((x) => x.id === id);
     if (!a) return { ok: false, msg: 'Unknown arena' };
@@ -426,13 +566,25 @@ function spawnMonster(habitat, minRarity) {
   return weighted[Math.floor(Math.random() * weighted.length)];
 }
 
+let forceExercise = null; // tests: PF.debug.forceExercise('meet-desk-press') picks that move first, once
+
 function pickExercises(pos, count) {
   const all = shuffle(D.EXERCISES[pos]);
+  let forced = null;
+  if (forceExercise) {
+    const i = all.findIndex((e) => e.id === forceExercise);
+    if (i >= 0) forced = all.splice(i, 1)[0];
+    forceExercise = null;
+  }
+  if (forced) all.unshift(forced);
+  // Meeting mode: any mix (mostly holds, which melt the monster with no input at all)
+  if (D.POSITIONS[pos].silent) return all.slice(0, count);
   const reps = all.filter((e) => e.type === 'reps');
   const holds = all.filter((e) => e.type === 'hold');
   // Mostly rep exercises (that's where the voice counting shines), at most one hold
   const out = reps.slice(0, count);
-  if (count >= 3 && holds.length) out.splice(1 + Math.floor(Math.random() * (count - 1)), 1, holds[0]);
+  if (forced && forced.type === 'hold') out[0] = forced;
+  else if (count >= 3 && holds.length) out.splice(1 + Math.floor(Math.random() * (count - 1)), 1, holds[0]);
   return out;
 }
 
@@ -444,6 +596,8 @@ function onClick(e) {
   if (a === 'skip-fight') escapeFight();
   else if (a === 'next-fight') nextFight();
   else if (a === 'end-session') endSession();
+  else if (a === 'disguise') setDisguise(true);
+  else if (a === 'reveal') setDisguise(false);
 }
 // Taps on the monster count as reps (pointerdown feels snappier than click)
 function onPointer(e) {
@@ -468,8 +622,8 @@ async function fightStart(el, pos) {
   host.addEventListener('click', onClick);
   host.addEventListener('pointerdown', onPointer);
   document.addEventListener('keydown', onKey);
-  getAudioContext(); // unlock audio inside the tap
   const p = D.POSITIONS[pos];
+  if (!p.silent) getAudioContext(); // unlock audio inside the tap (meeting mode stays silent)
   let lure = null;
   if (S.armedLure && store.lureCount(S, S.armedLure) > 0) {
     lure = D.LURES.find((l) => l.id === S.armedLure);
@@ -499,10 +653,17 @@ async function fightStart(el, pos) {
     maxCombo: 0,
     lastRepAt: 0,
     lastAnyRep: performance.now(),
-    mic: S.settings.mic && detector.supported ? 'starting' : false,
+    // Meeting mode: the mic never starts (no permission prompt), no sound, vibration or music
+    mic: !p.silent && S.settings.mic && detector.supported ? 'starting' : false,
+    silent: !!p.silent,
+    disguised: false,
+    streak: null, // touchStreak's news from the first fight of the day (the Summary shows it)
     lure,
     hour: new Date().getHours(),
   };
+  if (p.silent) setHush(true);
+  else if (hushUntil) setHush(false); // a normal fight ends the quiet time after a meeting
+  applySettings();
   persist();
   route = 'fight';
   renderFight();
@@ -536,7 +697,9 @@ function fightStop() {
     detector.stop();
     keepAwake(false);
     if (session.reps || session.captured.length) persist();
+    if (session.silent) setHush(true);
     session = null;
+    applySettings();
   }
   if (host) {
     host.removeEventListener('click', onClick);
@@ -555,10 +718,12 @@ function renderFight() {
   const { ex, monster } = f;
   const isHold = ex.type === 'hold';
   const tiles = Array.from({ length: 36 }, () => '<i></i>').join('');
-  host.innerHTML = `<div class="fight arena-${esc(S.arena)}">
+  const silent = session.silent;
+  host.innerHTML = `<div class="fight arena-${esc(S.arena)}${silent ? ' stealth' : ''}${session.disguised ? ' disguised' : ''}">
     <header class="fight-top">
       <div class="round">Fight ${session.index + 1}<span>/${session.fights.length}</span></div>
       <div class="ftimer" id="fTimer">${fmtTime((Date.now() - session.startedAt) / 1000)}</div>
+      ${silent ? `<button class="disguise-btn" type="button" data-action="disguise">${I.table} Disguise</button>` : ''}
       <button class="icon-btn" type="button" data-action="end-session" aria-label="End session">${I.x}</button>
     </header>
     <section class="ex">
@@ -585,12 +750,66 @@ function renderFight() {
       <div class="miclabel" id="micLabel"></div>
     </section>
     <footer class="fight-foot">
-      <span class="hint">${isHold ? 'Hold it! The monster melts while you hold.' : 'No mic? Tap the monster or press space for each rep.'}</span>
+      <span class="hint">${silent ? (isHold ? 'Just hold. The monster melts on its own, no taps needed.' : 'Tap the monster once per rep. Silent, no mic.')
+        : isHold ? 'Hold it! The monster melts while you hold.' : 'No mic? Tap the monster or press space for each rep.'}</span>
       <button class="link" type="button" data-action="skip-fight">${I.skip} Let it escape</button>
     </footer>
     <div class="overlay" id="overlay"></div>
+    ${silent ? disguiseMarkup() : ''}
   </div>`;
   updateMicBar();
+  updateDisguise();
+}
+
+// ---------- Meeting mode's disguise: a dull spreadsheet over the fight ----------
+// Holds keep melting the monster underneath, a tap on the grid counts a rep, and the status bar tells the player
+// (and only the player) how it is going: Count = reps landed, Sum = seconds or reps left, Recalculating = progress.
+function disguiseMarkup() {
+  const r = seeded('sheet:' + session.startedAt);
+  const cols = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const heads = ['Region', 'Q1', 'Q2', 'Q3', 'Q4', 'Total'];
+  const regions = ['North', 'South', 'East', 'West', 'Central', 'Online', 'Retail', 'Partners', 'EMEA', 'APAC', 'Other', 'Total'];
+  const money = () => (1200 + Math.floor(r() * 88000)).toLocaleString('en-US');
+  const rows = regions.map((name, i) => `<tr><th>${i + 2}</th><td>${name}</td>${[1, 2, 3, 4, 5].map(() => `<td>${money()}</td>`).join('')}</tr>`).join('');
+  const tabs = session.fights.map((_, i) => `<span class="ds-tab" data-sheet="${i}">Sheet${i + 1}</span>`).join('');
+  return `<div class="disguise" id="disguise" aria-label="Disguise: a spreadsheet. Tap the grid to count a rep.">
+    <div class="ds-bar"><b>Q3_numbers.xlsx</b><span class="ds-menu">File  Home  Insert  Formulas  Data  Review</span>
+      <button class="ds-reveal" type="button" data-action="reveal">Show monster</button></div>
+    <div class="ds-formula"><span class="ds-cell">E7</span><span class="ds-fx">fx</span><span>=SUM(B7:D7)*1.04</span></div>
+    <div class="ds-grid" data-tap="1">
+      <table><thead><tr><th></th>${cols.map((c) => `<th>${c}</th>`).join('')}</tr><tr><th>1</th>${heads.map((h) => `<td><b>${h}</b></td>`).join('')}</tr></thead>
+      <tbody>${rows}</tbody></table>
+    </div>
+    <div class="ds-tabs">${tabs}</div>
+    <div class="ds-status"><span id="dsCalc">Ready</span><span class="ds-prog"><i id="dsProg"></i></span><span id="dsCount">Count: 0</span><span id="dsSum">Sum: 0</span></div>
+  </div>`;
+}
+
+function updateDisguise() {
+  const box = $('disguise');
+  if (!box || !session) return;
+  const f = cur();
+  if (!f) return;
+  const done = 1 - Math.max(0, f.hp) / f.maxHp;
+  const calc = $('dsCalc');
+  if (calc) calc.textContent = f.phase === 'captured' ? 'Saved' : f.phase === 'fight' ? `Recalculating… ${Math.round(done * 100)}%` : 'Ready';
+  const prog = $('dsProg');
+  if (prog) prog.style.transform = `scaleX(${done.toFixed(3)})`;
+  const count = $('dsCount');
+  if (count) count.textContent = `Count: ${f.ex.type === 'hold' ? f.maxHp - Math.max(0, f.hp) : f.reps}`;
+  const sum = $('dsSum');
+  if (sum) sum.textContent = `Sum: ${Math.max(0, f.hp)}`;
+  box.querySelectorAll('.ds-tab').forEach((t) => t.classList.toggle('on', Number(t.dataset.sheet) === session.index));
+}
+
+function setDisguise(on) {
+  if (!session || !session.silent) return;
+  session.disguised = !!on;
+  const fight = host && host.querySelector('.fight');
+  if (fight) fight.classList.toggle('disguised', session.disguised);
+  updateDisguise();
+  const focus = host && host.querySelector(on ? '.ds-reveal' : '.disguise-btn');
+  if (focus) focus.focus({ preventScroll: true });
 }
 
 function updateMicBar() {
@@ -599,7 +818,9 @@ function updateMicBar() {
   if (!bar || !session) return;
   const f = cur();
   bar.classList.toggle('off', session.mic !== true || f.ex.type === 'hold');
-  if (f.ex.type === 'hold') {
+  if (session.silent) {
+    label.innerHTML = `${I.eyeOff} ${esc(f.ex.cue)}`;
+  } else if (f.ex.type === 'hold') {
     label.innerHTML = esc(f.ex.cue);
   } else if (session.mic === true) {
     label.innerHTML = `${I.mic} ${esc(f.ex.cue)}`;
@@ -645,6 +866,7 @@ function beginRound() {
         f.startedAt = performance.now();
         session.lastAnyRep = performance.now();
         detector.listening = f.ex.type === 'reps';
+        updateDisguise();
         if (f.ex.type === 'hold') f.nextHoldTick = performance.now() + 1000;
       }, 500);
     }
@@ -761,6 +983,7 @@ function showDamage(f, text, source) {
     void art.offsetWidth;
     art.classList.add('hit');
   }
+  updateDisguise();
   const pops = $('pops');
   if (pops) {
     const p = document.createElement('div');
@@ -801,8 +1024,12 @@ function capture(f) {
     day.punches.push(hour);
     punched = true;
   }
-  store.touchStreak(S);
-  session.captured.push({ id: m.id, isNew, tierUp: tierUp && tierUp.name, pounds, xp });
+  const streak = store.touchStreak(S);
+  if (streak.changed) session.streak = streak;
+  const how = { ex: f.ex.name, type: f.ex.type, reps: f.ex.type === 'hold' ? f.maxHp : f.reps, pos: session.pos };
+  if (!S.catchLog) S.catchLog = {};
+  S.catchLog[m.id] = how;
+  session.captured.push(Object.assign({ id: m.id, isNew, tierUp: tierUp && tierUp.name, pounds, xp }, how));
   persist();
 
   sfx.capture(m.rarity);
@@ -817,7 +1044,7 @@ function capture(f) {
     if (!session || cur() !== f || !ov) return;
     ov.className = `overlay show cap r-${m.rarity}`;
     ov.innerHTML = `<div class="cap-box">
-      ${sparkles(m.rarity === 'common' ? 8 : 16)}
+      ${session.silent ? '' : sparkles(m.rarity === 'common' ? 8 : 16)}
       <div class="cap-title">${isNew ? 'NEW MONSTER!' : 'CAPTURED!'}</div>
       <div class="cap-card r-${m.rarity} t-${newTier.id}">
         <div class="cap-art">${monsterSVG(m)}</div>
@@ -930,7 +1157,9 @@ function finishSession() {
     day.sessions++;
     S.totals.seconds += secs;
     S.lastSessionAt = Date.now();
-    store.touchStreak(S);
+    const streak = store.touchStreak(S);
+    if (streak.changed) session.streak = streak;
+    if (session.silent) S.totals.meetingSessions = (S.totals.meetingSessions || 0) + 1;
   }
 
   // Quests
@@ -967,13 +1196,287 @@ function finishSession() {
     levelUp: lvAfter.level > session.startLevel ? lvAfter : null,
     pounds: S.earned - session.startEarned,
     xp: S.xp - session.startXp,
+    streak: session.streak,
   };
   const done = session;
   session = null;
   lastSummary = done;
-  if (done.summary.levelUp) setTimeout(() => sfx.levelUp(), 300);
-  else if (done.summary.pounds > 0) setTimeout(() => sfx.coin(), 300);
+  if (done.silent) setHush(true); // the results and the next half hour stay quiet too
+  applySettings();
+  if (!done.silent) {
+    if (done.summary.levelUp) setTimeout(() => sfx.levelUp(), 300);
+    else if (done.summary.pounds > 0) setTimeout(() => sfx.coin(), 300);
+  }
   hook('finished', didSomething);
+}
+
+// ---------- Share your catch: a 1080x1350 PNG card through the phone's share sheet ----------
+// navigator.share only works inside the tap that asked for it, so the card is drawn ahead of time (PF.warmShare when
+// the Summary or the Monster dialog opens) and PF.shareCard(id) shares the cached file straight away. Without file
+// sharing (most desktop browsers) the PNG downloads and the caption goes to the clipboard. Cancelling says nothing.
+
+const RARITY_COLOUR = { common: '#a9b4bf', rare: '#3fa9ff', epic: '#c08aff', legendary: '#ffc531' };
+const TIER_COLOUR = { bronze: '#d08a4c', silver: '#dfe6ec', gold: '#ffc531' };
+const shareCache = new Map(); // monster id -> {sig, file, info, promise}
+
+function shareInfo(id) {
+  const m = D.MONSTER_BY_ID[id];
+  const c = (m && S.caught[id]) || 0;
+  if (!c) return null;
+  const fromSession = lastSummary && lastSummary.captured.find((x) => x.id === id);
+  const how = fromSession || (S.catchLog || {})[id] || null;
+  const isNew = fromSession ? !!fromSession.isNew : c === 1;
+  const pos = (how && how.pos) || D.HABITAT_POSITION[m.habitat];
+  const place = D.PLACES[pos] || 'at my desk';
+  const what = how && how.ex ? (how.type === 'hold' ? `a ${how.reps}-second ${how.ex}` : `${how.reps} ${how.ex}`) : '';
+  const t = D.tierFor(c);
+  const lv = store.levelInfo(S.xp);
+  const unique = store.uniqueCaught(S);
+  const the = /^the /i.test(m.name) ? m.name : `the ${m.name}`;
+  const info = {
+    m, isNew, tier: t && t.name ? t : null,
+    caughtLine: what ? `Caught with ${what} ${place}` : `Caught ${place}`,
+    levelLine: `Level ${lv.level} ${lv.rank} · ${unique}/${D.MONSTERS.length} caught`,
+    caption: `I caught ${the}${what ? ` with ${what}` : ''} ${place}. Brain off, glutes on. https://poundfighter.com`,
+    title: `${m.name} · PoundFighter`,
+  };
+  info.sig = [c, lv.level, unique, isNew, info.caughtLine].join('|');
+  return info;
+}
+
+function roundRect(g, x, y, w, h, r) {
+  g.beginPath();
+  g.moveTo(x + r, y);
+  g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r);
+  g.arcTo(x, y + h, x, y, r);
+  g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function fitFont(g, text, weightFamily, size, maxW) {
+  let px = size;
+  g.font = `${weightFamily.replace('{px}', px)}`;
+  while (px > 24 && g.measureText(text).width > maxW) {
+    px -= 4;
+    g.font = `${weightFamily.replace('{px}', px)}`;
+  }
+  return px;
+}
+
+function wrapLines(g, text, maxW, maxLines) {
+  const words = text.split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (g.measureText(next).width > maxW && line) {
+      lines.push(line);
+      line = w;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  if (lines.length > maxLines) {
+    lines.length = maxLines;
+    lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…';
+  }
+  return lines;
+}
+
+function svgImage(svg, size) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('monster art did not load'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg.replace('<svg ', `<svg width="${size}" height="${size}" `));
+  });
+}
+
+async function drawCard(info) {
+  const W = 1080, H = 1350;
+  const { m } = info;
+  const rc = RARITY_COLOUR[m.rarity];
+  try {
+    await Promise.all(['72px Bungee', '700 40px Rubik', 'italic 400 38px Rubik', '500 34px Rubik'].map((f) => document.fonts.load(f)));
+  } catch (e) { /* system fonts then */ }
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#140e0c';
+  g.fillRect(0, 0, W, H);
+  // rays behind the monster, in its rarity colour
+  const cx = W / 2, cy = 600;
+  g.save();
+  g.translate(cx, cy);
+  g.globalAlpha = m.rarity === 'common' ? 0.06 : 0.1;
+  g.fillStyle = rc;
+  for (let i = 0; i < 18; i++) {
+    g.rotate(Math.PI / 9);
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(1000, -90);
+    g.lineTo(1000, 90);
+    g.closePath();
+    g.fill();
+  }
+  g.restore();
+  const glow = g.createRadialGradient(cx, cy, 40, cx, cy, 380);
+  glow.addColorStop(0, 'rgba(255, 220, 160, .16)');
+  glow.addColorStop(1, 'rgba(20, 14, 12, 0)');
+  g.fillStyle = glow;
+  g.fillRect(0, 0, W, H);
+  // the card frame (gold for a Gold card, else the rarity colour)
+  roundRect(g, 36, 36, W - 72, H - 72, 56);
+  g.lineWidth = 14;
+  g.strokeStyle = info.tier && info.tier.id === 'gold' ? '#ffc531' : rc;
+  g.stroke();
+  // logo
+  g.textBaseline = 'alphabetic';
+  g.font = '60px Bungee';
+  const a = 'POUND', b = 'FIGHTER';
+  const wa = g.measureText(a).width, wb = g.measureText(b).width;
+  let x = (W - wa - wb) / 2;
+  g.textAlign = 'left';
+  g.fillStyle = '#6b2a0c';
+  g.fillText(a, x, 150 + 5);
+  g.fillStyle = '#ff6b2c';
+  g.fillText(a, x, 150);
+  g.fillStyle = '#6b3a05';
+  g.fillText(b, x + wa, 150 + 5);
+  g.fillStyle = '#ffd34d';
+  g.fillText(b, x + wa, 150);
+  // the monster
+  const img = await svgImage(monsterSVG(m), 560);
+  g.drawImage(img, cx - 280, cy - 300, 560, 560);
+  // NEW! ribbon across the top-right corner
+  if (info.isNew) {
+    g.save();
+    g.translate(W - 190, 190);
+    g.rotate(Math.PI / 4);
+    g.fillStyle = '#5ad17a';
+    g.fillRect(-260, -42, 520, 84);
+    g.fillStyle = '#062210';
+    g.font = '50px Bungee';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('NEW!', 0, 4);
+    g.restore();
+    g.textBaseline = 'alphabetic';
+  }
+  g.textAlign = 'center';
+  // name
+  const nameY = 960;
+  fitFont(g, m.name.toUpperCase(), '{px}px Bungee', 76, W - 180);
+  g.fillStyle = '#000000';
+  g.globalAlpha = 0.5;
+  g.fillText(m.name.toUpperCase(), cx, nameY + 5);
+  g.globalAlpha = 1;
+  g.fillStyle = '#fff3ea';
+  g.fillText(m.name.toUpperCase(), cx, nameY);
+  // rarity · habitat · tier
+  const bits = [D.RARITIES[m.rarity].name.toUpperCase(), D.HABITATS[m.habitat].name.toUpperCase()];
+  if (info.tier) bits.push(`${info.tier.name.toUpperCase()} CARD`);
+  g.font = '700 36px Rubik';
+  g.fillStyle = info.tier ? TIER_COLOUR[info.tier.id] : rc;
+  g.fillText(bits.join('  ·  '), cx, nameY + 62);
+  // flavour text
+  g.font = 'italic 400 36px Rubik';
+  g.fillStyle = '#e7d3c9';
+  wrapLines(g, `“${m.flavor}”`, W - 220, 2).forEach((l, i) => g.fillText(l, cx, nameY + 128 + i * 46));
+  // how it was caught + the player's level
+  g.font = '700 40px Rubik';
+  g.fillStyle = '#fff3ea';
+  fitFont(g, info.caughtLine, '700 {px}px Rubik', 40, W - 180);
+  g.fillText(info.caughtLine, cx, 1170);
+  g.font = '500 32px Rubik';
+  g.fillStyle = '#bda69b';
+  g.fillText(info.levelLine, cx, 1218);
+  // footer
+  g.font = '34px Bungee';
+  const dom = 'POUNDFIGHTER.COM';
+  const tail = '  ·  Brain off, glutes on.';
+  const wd = g.measureText(dom).width;
+  g.font = '500 30px Rubik';
+  const wt = g.measureText(tail).width;
+  x = (W - wd - wt) / 2;
+  g.textAlign = 'left';
+  g.font = '34px Bungee';
+  g.fillStyle = '#ffd34d';
+  g.fillText(dom, x, 1284);
+  g.font = '500 30px Rubik';
+  g.fillStyle = '#bda69b';
+  g.fillText(tail, x + wd, 1284);
+  const blob = await new Promise((resolve) => cv.toBlob(resolve, 'image/png'));
+  if (!blob) throw new Error('the card could not be drawn');
+  return new File([blob], `poundfighter-${m.id}.png`, { type: 'image/png' });
+}
+
+function prepareShare(id) {
+  const info = shareInfo(id);
+  if (!info) return Promise.reject(new Error('Catch this monster first.'));
+  const hit = shareCache.get(id);
+  if (hit && hit.sig === info.sig) return hit.promise;
+  const entry = { sig: info.sig, info, file: null };
+  entry.promise = drawCard(info).then((file) => { entry.file = file; return file; });
+  entry.promise.catch(() => { if (shareCache.get(id) === entry) shareCache.delete(id); });
+  shareCache.set(id, entry);
+  return entry.promise;
+}
+
+function sharedOnce() {
+  S.totals.shares = (S.totals.shares || 0) + 1;
+  const badges = store.checkBadges(S, {});
+  persist();
+  badges.forEach((b) => hook('toast', `Badge unlocked: ${b.name}!`, 'ok'));
+}
+
+function downloadCard(entry) {
+  const url = URL.createObjectURL(entry.file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = entry.file.name;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 4000);
+  window.__pfLastDownload = entry.file.name; // tests read this
+  const done = (copied) => {
+    hook('toast', copied ? 'Card saved, caption copied' : 'Card saved. Caption: ' + entry.info.caption, 'ok');
+    sharedOnce();
+  };
+  try {
+    navigator.clipboard.writeText(entry.info.caption).then(() => done(true), () => done(false));
+  } catch (e) {
+    done(false);
+  }
+}
+
+function deliverCard(entry) {
+  const data = { files: [entry.file], title: entry.info.title, text: entry.info.caption };
+  let canFiles = false;
+  try { canFiles = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [entry.file] })); } catch (e) { canFiles = false; }
+  if (!canFiles) return downloadCard(entry);
+  navigator.share(data).then(sharedOnce, (e) => {
+    if (e && e.name === 'AbortError') return; // the player closed the share sheet: nothing to say
+    downloadCard(entry); // the tap's permission ran out (or sharing failed): save it instead
+  });
+}
+
+// Called straight from the Share button's click (no server call first, or the share sheet is refused)
+function shareCard(id) {
+  const info = shareInfo(id);
+  if (!info) {
+    hook('toast', 'Catch this monster first, then you can share its card.', 'error');
+    return false;
+  }
+  const hit = shareCache.get(id);
+  if (hit && hit.sig === info.sig && hit.file) {
+    deliverCard(hit);
+    return true;
+  }
+  prepareShare(id).then(() => deliverCard(shareCache.get(id)), () => hook('toast', 'The card could not be drawn on this device.', 'error'));
+  return true;
 }
 
 // ---------- Reminders: push subscription + the in-app fallback (Python owns the dialogs and server calls) ----------
@@ -1096,7 +1599,12 @@ window.PF = {
   fightStart: (el, pos) => { if (!D.POSITIONS[pos]) return false; fightStart(el, pos); return true; },
   fightStop,
   inFight: () => !!session,
+  // Share your catch: warmShare when a Summary / Monster dialog opens (returns at once), shareCard inside the tap
+  warmShare: (id) => { prepareShare(id).catch(() => {}); return true; },
+  prepareShare: (id) => prepareShare(id).then((f) => ({ type: f.type, size: f.size, name: f.name })),
+  shareCard,
   // Handy for testing in the console and in tools/ui/smoke.js
-  debug: { get state() { return S; }, detector, onRep, finish: () => finishSession() },
+  debug: { get state() { return S; }, get session() { return session; }, detector, onRep, finish: () => finishSession(),
+    forceExercise: (id) => { forceExercise = id; } },
 };
 if (window.__pfReady) window.__pfReady(window.PF);

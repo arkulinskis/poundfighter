@@ -7,6 +7,17 @@
         <p class="tag">Brain off, glutes on.</p>
       </section>
 
+      <section class="panel streak-box" anvil:name="streak_box">
+        <div class="streak-main">
+          <span class="streak-flame" aria-hidden="true"><i class="ic ic-flame"></i></span>
+          <div class="streak-text"><b anvil:dom-node="streak_title">Start a streak</b><span class="small muted" anvil:dom-node="streak_sub"></span></div>
+          <span class="shield-pips" role="img" anvil:dom-node="shield_pips"></span>
+        </div>
+        <div class="week-dots" role="list" aria-label="This week">
+          <anvil-component type="RepeatingPanel" name="week_panel" prop:item_template="PoundFighter.Items.WeekDot" prop:role='["contents"]'></anvil-component>
+        </div>
+      </section>
+
       <section class="panel install-card gold-panel" anvil:name="install_card">
         <div class="acct-crest"><i class="ic ic-download"></i></div>
         <div class="install-text"><b>Install PoundFighter</b><span class="small">Opens in one tap, and can remind you to move during the day.</span></div>

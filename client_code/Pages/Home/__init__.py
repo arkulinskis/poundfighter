@@ -26,6 +26,7 @@ class Home(HomeTemplate):
         self.quest_panel.items = d["quests"]
         self.sight_panel.items = d["sightings"]
         self.sightings_box.visible = bool(d["sightings"])
+        self._draw_streak(d["streak"])
         self.dom_nodes["punch_count"].textContent = "%d/%d" % (d["punchCount"], d["punchTotal"])
         on = d["micOn"]
         self.mic_switch.classes["on"] = on
@@ -38,6 +39,18 @@ class Home(HomeTemplate):
         self.lure_box.visible = bool(d["lure"])
         self.dom_nodes["lure_name"].textContent = d["lure"]
         self.install_card.visible = bool(reminders.can_install()) and not pf.device().get("hideInstall")
+
+    def _draw_streak(self, st):
+        """The streak strip: flame + count, what today means for it, shield pips and this week's seven days."""
+        self.streak_box.classes.update({"alive": bool(st["alive"]), "done": bool(st["today"])})
+        self.dom_nodes["streak_title"].textContent = st["title"]
+        self.dom_nodes["streak_sub"].textContent = st["sub"]
+        held, top = int(st["shields"]), int(st["maxShields"])
+        pips = self.dom_nodes["shield_pips"]
+        pips.innerHTML = "".join('<i class="ic ic-shield%s"></i>' % ("" if n < held else " off") for n in range(top))
+        pips.setAttribute("aria-label", "%d of %d Streak Shields" % (held, top))
+        pips.setAttribute("title", "Streak Shields: %d of %d. Each covers one missed workday." % (held, top))
+        self.week_panel.items = st["week"]
 
     def _length(self, value, **event_args):
         key = state.focus_key()

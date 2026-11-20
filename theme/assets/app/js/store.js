@@ -1,7 +1,7 @@
 // Player progress, saved in this browser's localStorage (and synced to the
 // player's account when they are signed in, see online.js).
 
-import { MONSTERS, MONSTER_BY_ID, HABITATS, RANKS, QUEST_TEMPLATES, BADGES, tierFor } from './data.js';
+import { MONSTERS, MONSTER_BY_ID, HABITATS, RANKS, QUEST_TEMPLATES, BADGES, STREAK, tierFor } from './data.js';
 import { seeded } from './monster-art.js';
 
 const KEY = 'poundfighter.v2';
@@ -19,12 +19,16 @@ export function defaults() {
     earned: 0,
     spent: 0,
     xp: 0,
+    // totals merge key by key (larger wins), so new counters need no merge change: shields earned/bought/used,
+    // the best streak, meeting-mode sessions and shared cards live here too
     totals: { reps: 0, micReps: 0, seconds: 0, sessions: 0, captures: 0, escapes: 0 },
     bestCombo: 0,
     caught: {}, // monsterId -> times caught
     firstCaught: {}, // monsterId -> day
     badges: {}, // badgeId -> day earned
-    streak: { count: 0, last: null },
+    streak: { count: 0, last: null }, // count = fight days in the unbroken chain; last = the latest fight day
+    shieldDays: {}, // day a Streak Shield covered -> the day it was used
+    catchLog: {}, // monsterId -> {ex, reps, type, pos} of its latest catch (the share card names it)
     days: {},
     lureBought: {}, // lureId -> total ever bought
     lureUsed: {}, // lureId -> total ever used
@@ -41,6 +45,7 @@ export function defaults() {
       vibrate: true,
       length: 3,
       micSetupDone: false,
+      weekendsOff: true, // weekends never break the streak (a weekend fight still adds +1)
       reminders: { on: false, start: 9, end: 17, every: 60, weekdays: true },
     },
   };
@@ -77,7 +82,9 @@ function migrate(saved) {
 }
 
 export function fromData(data) {
-  return merge(defaults(), migrate(data && JSON.parse(JSON.stringify(data))));
+  const s = merge(defaults(), migrate(data && JSON.parse(JSON.stringify(data))));
+  migrateStreak(s);
+  return s;
 }
 
 export function load() {
@@ -100,6 +107,7 @@ export function save(state) {
 export function resetAll(keepSettings) {
   try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
   const s = defaults();
+  s.streakV = 2; // nothing to recount on a fresh start
   if (keepSettings) s.settings = merge(s.settings, keepSettings);
   return s;
 }
@@ -164,7 +172,7 @@ export function mergeStates(stored, incoming) {
   const out = { ...b };
   for (const k of ['xp', 'earned', 'spent', 'bestCombo', 'lastSessionAt']) out[k] = maxNum(a[k], b[k]) || 0;
   for (const k of ['totals', 'caught', 'lureBought', 'lureUsed']) out[k] = maxDict(a[k], b[k]);
-  for (const k of ['firstCaught', 'badges']) {
+  for (const k of ['firstCaught', 'badges', 'shieldDays']) {
     const m = { ...(a[k] || {}) };
     for (const [key, day] of Object.entries(b[k] || {})) m[key] = key in m ? (m[key] < day ? m[key] : day) : day;
     out[k] = m;
@@ -219,20 +227,125 @@ export function questInfo(day, q) {
   return { text: t.text(q.target), value: Math.min(value, q.target), target: q.target, done: value >= q.target, reward: t.reward };
 }
 
-export function touchStreak(state) {
-  const today = dayKey();
-  if (state.streak.last === today) return;
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  state.streak.count = state.streak.last === dayKey(y) ? state.streak.count + 1 : 1;
-  state.streak.last = today;
+// ---------- Workday streak + Streak Shields ----------
+// The streak counts fight days. Rest days (weekends, unless Me → "Weekends off" is switched off) never break it,
+// and a fight on one still adds +1. A missed workday breaks it unless a Streak Shield covers it. Shields are used
+// lazily, by the next fight: if the gap needs more shields than you hold, the streak restarts and you keep them.
+// Every function takes `now` so tests can fake the date. Mirrored by _streak_needs_today in server_code.
+
+export const parseDay = (key) => { const [y, m, d] = String(key).split('-').map(Number); return new Date(y, m - 1, d); };
+export const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+// A day counts as fought when something happened (getDay() makes empty records just from opening Home)
+export const foughtDay = (rec) => !!rec && ((rec.sessions || 0) > 0 || (rec.reps || 0) > 0 || (rec.captures || 0) > 0);
+
+export const weekendsOff = (s) => !s.settings || s.settings.weekendsOff !== false;
+export function isRestDay(s, d) {
+  const w = d.getDay();
+  return weekendsOff(s) && (w === 0 || w === 6);
 }
 
-export function currentStreak(state) {
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  if (state.streak.last === dayKey() || state.streak.last === dayKey(y)) return state.streak.count;
-  return 0;
+export function shieldsHeld(s) {
+  const t = s.totals || {};
+  const used = Math.max(t.shieldsUsed || 0, Object.keys(s.shieldDays || {}).length);
+  return Math.max(0, (t.shieldsEarned || 0) + (t.shieldsBought || 0) - used);
+}
+
+// Workdays strictly between the streak's last fight day and `now` that no shield covers yet
+export function missedWorkdays(s, now = new Date()) {
+  const last = s.streak && s.streak.last;
+  if (!last) return [];
+  const end = dayKey(now);
+  const covered = s.shieldDays || {};
+  const out = [];
+  let d = addDays(parseDay(last), 1);
+  for (let i = 0; dayKey(d) < end; i++, d = addDays(d, 1)) {
+    if (i > 400) return new Array(99).fill(end); // a very long gap: nothing could cover it
+    const k = dayKey(d);
+    if (!isRestDay(s, d) && !covered[k]) out.push(k);
+  }
+  return out;
+}
+
+// What the streak looks like right now (display only, consumes nothing).
+// alive: the next fight continues it; needed: missed workdays a shield would cover; lost: the count that ended;
+// repair: shields still to buy that would save a lost streak (0 = can't be saved)
+export function streakState(s, now = new Date()) {
+  const st = s.streak || {};
+  const today = dayKey(now);
+  const held = shieldsHeld(s);
+  const base = { count: 0, alive: false, today: false, rest: isRestDay(s, now), shields: held, needed: [], lost: 0, repair: 0 };
+  if (!st.last || !st.count) return base;
+  if (st.last >= today) return Object.assign(base, { count: st.count, alive: true, today: true });
+  const missed = missedWorkdays(s, now);
+  if (missed.length <= held) return Object.assign(base, { count: st.count, alive: true, needed: missed });
+  return Object.assign(base, { needed: missed, lost: st.count, repair: missed.length <= STREAK.maxHeld ? missed.length - held : 0 });
+}
+
+export const currentStreak = (s, now = new Date()) => streakState(s, now).count;
+
+// A fight happened `now`. Returns {changed, count, shieldsUsed: [days covered], shieldEarned, broken, was}.
+export function touchStreak(s, now = new Date()) {
+  if (!s.streak) s.streak = { count: 0, last: null };
+  if (!s.shieldDays) s.shieldDays = {};
+  const st = s.streak;
+  const t = s.totals;
+  const today = dayKey(now);
+  const was = st.count || 0;
+  if (st.last && st.last >= today) return { changed: false, count: was, shieldsUsed: [], shieldEarned: false, broken: false, was };
+  let shieldsUsed = [];
+  let broken = false;
+  if (!st.last || !was) {
+    st.count = 1;
+  } else {
+    const missed = missedWorkdays(s, now);
+    if (!missed.length) {
+      st.count = was + 1;
+    } else if (missed.length <= shieldsHeld(s)) {
+      const usedBefore = Math.max(t.shieldsUsed || 0, Object.keys(s.shieldDays).length);
+      for (const k of missed) s.shieldDays[k] = today;
+      t.shieldsUsed = usedBefore + missed.length;
+      shieldsUsed = missed;
+      st.count = was + 1;
+    } else {
+      broken = true;
+      st.count = 1;
+    }
+  }
+  st.last = today;
+  let shieldEarned = false;
+  if (st.count % STREAK.shieldEvery === 0 && shieldsHeld(s) < STREAK.maxEarned) {
+    t.shieldsEarned = (t.shieldsEarned || 0) + 1;
+    shieldEarned = true;
+  }
+  t.bestStreak = Math.max(t.bestStreak || 0, st.count);
+  return { changed: true, count: st.count, shieldsUsed, shieldEarned, broken, was };
+}
+
+// The streak under the workday rules, read from the daily records we still have (about 3 weeks)
+export function streakFromHistory(s) {
+  const last = s.streak && s.streak.last;
+  const keys = Object.keys(s.days || {}).sort();
+  if (!last || !keys.length) return 0;
+  const covered = s.shieldDays || {};
+  let count = 0;
+  for (let d = parseDay(last), i = 0; i < 60 && dayKey(d) >= keys[0]; i++, d = addDays(d, -1)) {
+    const k = dayKey(d);
+    if (foughtDay(s.days[k]) || (i === 0 && k === last)) count++;
+    else if (!isRestDay(s, d) && !covered[k]) break;
+  }
+  return count;
+}
+
+// Saves from before the workday streak (2026-11-20) counted calendar days, so a Monday reset everyone who rests at
+// weekends. Recount once from the stored history; never lower anyone's streak.
+export function migrateStreak(s) {
+  if (s.streakV === 2) return;
+  if (s.streak && s.streak.last) {
+    const fromHistory = streakFromHistory(s);
+    if (fromHistory > (s.streak.count || 0)) s.streak.count = fromHistory;
+    s.totals.bestStreak = Math.max(s.totals.bestStreak || 0, s.streak.count || 0);
+  }
+  s.streakV = 2;
 }
 
 // ---------- Levels ----------
@@ -286,5 +399,7 @@ export function checkBadges(state, ctx = {}) {
   if (ctx.hour !== undefined && ctx.hour < 8 && ctx.hour >= 4) give('early');
   if (ctx.hour !== undefined && (ctx.hour >= 22 || ctx.hour < 4)) give('owl');
   if (Object.values(state.caught).some((c) => tierFor(c) && tierFor(c).id === 'gold')) give('gold-card');
+  if ((t.meetingSessions || 0) >= 10) give('ninja');
+  if ((t.shares || 0) >= 1) give('show-off');
   return earned;
 }
